@@ -1,0 +1,42 @@
+<ui:composition 
+	xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+		<p:panel id="pResultado" header="Resultado Sorteo" style="margin-bottom:20px">
+		
+		<h:panelGrid columns="2">
+			<h:outputText value="Caso sorteado:" />
+			<h:outputText value="#{controladorSorteoView.audiencia.caso.nombre}" />								
+		</h:panelGrid>
+		
+		<h:panelGrid columns="1">		
+			<p:dataTable rowIndexVar="rowId" var="funcionario" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+				value="#{controladorSorteoView.arbitrosSeleccionados}">
+				<f:facet name="header">
+		            Árbitros Seleccionados
+		        </f:facet>
+					<p:column headerText="Id" style="width:20px;">
+						<h:outputText value="#{rowId + 1}" />
+					</p:column>				
+					<p:column headerText="Funcionario">
+						<h:outputText value="#{funcionario.nombreCompleto}" />
+					</p:column>
+					<p:column headerText="Nombramiento">
+						<h:outputText value="#{funcionario.nombradoComo}" />
+					</p:column>
+			</p:dataTable>
+		
+		</h:panelGrid>
+		
+			
+		</p:panel>
+		
+		<p:commandButton value="Continuar"  id="atras" 
+			actionListener="#{controladorSorteoView.pantallaInicial()}" 
+			update="frmListaCasos">
+	    </p:commandButton>
+	
+</ui:composition>

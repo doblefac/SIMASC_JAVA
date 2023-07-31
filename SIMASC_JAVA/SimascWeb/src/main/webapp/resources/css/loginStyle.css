@@ -1,0 +1,186 @@
+
+body {	
+	font-family: "Open Sans", sans-serif !important;
+	font-size: 1rem !important;
+	line-height: 1.5 !important;
+	color: #343434 !important;
+	background-color: #eee !important;
+}
+
+/* .col-xs-1, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9, .col-xs-10, .col-xs-11, .col-xs-12, .col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12, .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12, .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12, .col-xl-1, .col-xl-2, .col-xl-3, .col-xl-4, .col-xl-5, .col-xl-6, .col-xl-7, .col-xl-8, .col-xl-9, .col-xl-10, .col-xl-11, .col-xl-12 { */
+/*     position: relative; */
+/*     min-height: 1px; */
+/*     padding-right: 15px; */
+/*     padding-left: 15px; */
+/*     width: 100%; */
+/* } */
+
+@media (min-width: 768px).offset-md-3 {
+    margin-left: 25% !important;
+}
+
+.widget {
+    position: relative;
+    margin-bottom: 30px;
+    padding: 15px 20px !important;
+    background: #fff;
+    border-radius: 0.2rem;
+}
+
+footer {
+    margin-bottom: 25px !important;
+    font-size: 13px !important;
+    color: #818a91 !important;
+    text-align: center !important;
+}
+
+.widget-login-container{
+  padding-top: 10%;
+}
+
+.widget-login-logo{
+  margin-top: 15px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-weight: $font-weight-normal;
+  .fa-circle{
+    font-size: 13px;
+    margin: 0 20px;
+  }
+}
+
+.widget-login{
+  padding: 30px;
+   header{
+    h1,h2,h3,h4,h5,h6{
+      font-weight: $font-weight-normal;
+      text-align: center;
+    }
+  }
+}
+
+.widget-login-info{
+  font-size: $font-size-mini;
+  color: #888;
+  margin-top: 1px;
+  margin-bottom: 0;
+  text-align: center;
+
+  &.abc-checkbox {
+    margin-left: -25px;
+  }
+}
+
+.login-form{
+  .form-control{
+    font-size: $font-size-mini;
+    border: none;
+    background-color: $gray-lighter;
+    &:focus{
+      background-color: $gray-semi-lighter;
+    }
+  }
+}
+
+
+.componente-mensaje{
+    padding: 1rem;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    box-sizing: inherit;
+}
+.componente-mensaje-advertencia{
+    background-color: #fff5cc;
+    border-color: #ffeb99;
+    color: coral;
+}
+
+.icon_logo-small {
+    background-position: 0 -726px;
+/*     background-image: url(../images/cac-ccb.png); */
+	background-image: url(../images/cac-ccb.png);
+    -moz-background-size: 198px 1484px;
+    -o-background-size: 198px 1484px;
+    -webkit-background-size: 198px 1484px;
+    background-size: 198px 1484px;
+    background-repeat: no-repeat;
+    display: inline-block;
+    /*height: 42px;
+    width: 126px;*/
+    text-indent: -9999px;
+    top: .5rem;
+}
+
+.widget-login-logo {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: 400;
+}
+
+h5, .h5 {
+    font-size: 1.25rem;
+}
+
+h3, legend, .gamma, .fecha-ultima-renovacion .fecha, .datos-solicitante .nombres-solicitante {
+    line-height: 1.2 !important;
+    color: #000 !important;
+    font-weight: bold;
+    font-size: 1.4em !important;
+}
+
+.widget-login > header h1, .widget-login > header h2, .widget-login > header h3, .widget-login > header h4, .widget-login > header h5, .widget-login > header h6 {
+    font-weight: 400 !important;
+    text-align: center !important;
+}
+
+label {
+    font-weight: 400 !important;
+    font-size: 1.4em !important;
+}
+
+label {
+    display: inline-block !important;
+    margin-bottom: .5rem !important;
+}
+
+
+/* .alert-danger { */
+/*     background-color: #fff2ef !important; */
+/*     border-color: #ffddd6 !important; */
+/*     color: #a94442 !important; */
+/* } */
+
+.alert {
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+    border: 1px solid transparent !important;
+    border-radius: 0.25rem !important;
+}
+
+
+.ui-messages-error {
+	background-color: #fff2ef !important;
+    border-color: #ffddd6 !important;
+    color: #a94442 !important;	
+}
+
+
+
+/* .ui-messages-error ui-corner-all { */
+/* 	background-color: #fff2ef !important; */
+/*     border-color: #ffddd6 !important; */
+/*     color: #a94442 !important;	 */
+/* } */
+
+.ui-messages-error-summary {
+	color: #a94442 !important;
+}
+
+.ui-messages-error-detail {
+	color: #a94442 !important;
+	
+}
+

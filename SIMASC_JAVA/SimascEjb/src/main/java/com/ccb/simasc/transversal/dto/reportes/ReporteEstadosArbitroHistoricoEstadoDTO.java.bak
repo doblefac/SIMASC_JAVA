@@ -1,0 +1,46 @@
+package com.ccb.simasc.transversal.dto.reportes;
+
+import java.util.Date;
+
+import com.ccb.simasc.transversal.utilidades.UtilConstantes;
+import com.ccb.simasc.transversal.utilidades.UtilDominios;
+
+/**
+ * DTO reporte 23 - Estados Arbitro
+ * Contiene información del estado de un arbitro para un servicio-materia específico
+ * @author jsoto
+ *
+ */
+public class ReporteEstadosArbitroHistoricoEstadoDTO {
+	
+	
+	private String estado; 
+	private Date fechaAsignacion;
+	/**
+	 * @return the estado
+	 */
+	public String getEstado() {
+		return estado;
+	}
+	/**
+	 * @param estado the estado to set
+	 */
+	public void setEstado(String estado) {
+		this.estado = estado;
+	}
+	/**
+	 * @return the fechaAsignacion
+	 */
+	public Date getFechaAsignacion() {
+		return fechaAsignacion;
+	}
+	/**
+	 * @param fechaAsignacion the fechaAsignacion to set
+	 */
+	public void setFechaAsignacion(Date fechaAsignacion) {
+		this.fechaAsignacion = fechaAsignacion;
+	}
+	
+	
+	
+}

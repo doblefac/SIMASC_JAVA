@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+	<h:head>
+	</h:head>
+	<h:body >
+		<f:event listener="#{controladorReporteCasosSorteadosView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+		<h:form>
+		<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteCasosSorteadosView.postConstruct}"/>
+			<p:panel id="infoCaso" header="Casos sorteados"
+				style="margin-bottom:20px">
+
+				<p:panelGrid columns="4"
+					columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"
+					layout="grid" styleClass="contentGrid"   cellspacing="10"  >
+					<p:outputLabel for="fechaIni" value="Fecha Inicial*" />
+					<p:calendar id="fechaIni" locale="es"
+						value="#{controladorReporteCasosSorteadosView.fechaInicialSeleccionada}"
+						pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha inicial no es válida">
+						<p:ajax event="dateSelect"
+							listener="#{controladorReporteCasosSorteadosView.onDateSelect}" />
+					</p:calendar>
+
+					<p:outputLabel for="fechaFin" value="Fecha Final*" />
+					<p:calendar id="fechaFin" locale="es"
+						value="#{controladorReporteCasosSorteadosView.fechaFinSeleccionada}"
+						pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha final no es válida">
+						<p:ajax event="dateSelect"
+							listener="#{controladorReporteCasosSorteadosView.onDateSelectF}" />
+					</p:calendar>
+					<p:outputLabel for="selectMotivo" value="Servicio" />
+					<p:selectOneMenu
+						value="#{controladorReporteCasosSorteadosView.tipoCasoSeleccionado}"
+						id="selectMotivo">
+						<f:selectItem itemLabel="TODOS LOS SERVICIOS" itemValue="-1" />
+						<f:selectItems
+							value="#{controladorReporteCasosSorteadosView.tipoCasoDTOs}"
+							var="lS" itemLabel="#{lS.nombre}" itemValue="#{lS.idServicio}"></f:selectItems>
+					</p:selectOneMenu>
+					
+					<p:outputLabel for="selectConsumo" value="Consumo" />
+					<p:selectOneMenu
+						value="#{controladorReporteCasosSorteadosView.consumoSeleccionado}"
+						id="selectConsumo">
+						<f:selectItem itemLabel="Seleccione" itemValue="-1" />
+						<f:selectItems
+							value="#{controladorReporteCasosSorteadosView.consumo}"
+							var="lS" itemLabel="#{lS}" itemValue="#{lS}"></f:selectItems>
+					</p:selectOneMenu>
+					
+				</p:panelGrid>
+				<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>					
+					<p:commandButton value="Exportar a Excel"
+						action="#{controladorReporteCasosSorteadosView.generarExcel}"
+						icon="fa fa-file-excel-o"
+						disabled="#{controladorReporteCasosSorteadosView.visible}"
+						ajax="false">
+					</p:commandButton>
+										
+					<h:commandButton
+						actionListener="#{controladorReporteCasosSorteadosView.buscar}"
+						value="Buscar" update="growl" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" />
+					
+				</p:panelGrid>
+			</p:panel>
+			<p:panel>
+				<p:panelGrid columns="1" layout="grid">
+
+					<p:dataGrid id="tbl"  var="caso" paginator="true" rows="5"
+						rowsPerPageTemplate="5, 10, 20"
+						paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						value="#{controladorReporteCasosSorteadosView.reporteCasosSorteadosDTOs}"
+						columns="1"
+						emptyMessage="#{bundle.MensajeReporteSinResultado}">
+
+						<f:facet name="header">
+	            			CASOS SORTEADOS
+	        			</f:facet>
+
+						<p:panel header="#{caso.idCaso} - #{caso.nombreCaso}" style="text-align:center">
+
+							<p:dataTable id="tblCaso" var="arbitro" value="#{caso}" emptyMessage="#{bundle.MensajeReporteSinResultado}">
+								<p:columnGroup type="header">
+									<p:row>
+										<p:column headerText="Fecha Sorteo" />
+										<p:column headerText="Servicio" />
+										<p:column headerText="Materia" />
+										<p:column headerText="Cuantía" />
+										<p:column headerText="Valor" />
+										<p:column headerText="Tipo de Preselección" />
+										<p:column headerText="Preselección" />
+										<p:column headerText="Tipo de Sorteo" />
+										<p:column headerText="Consumo" />										
+									</p:row>
+								</p:columnGroup>
+								<p:column>
+									<h:outputText value="#{caso.fechaSorteo}">
+									</h:outputText>
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.tipoCaso}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.materia}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.tipoCuantia}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.valorPretensiones}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.tipoPreseleccion}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.preseleccionLabel}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.tipoSorteo}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.consumo}" />
+								</p:column>
+							</p:dataTable>
+
+							<p:dataTable id="tblArb" var="arbitro" value="#{caso.arbitros}" emptyMessage="#{bundle.MensajeReporteSinResultado}">
+								<p:columnGroup type="header">
+									<p:row>
+										<p:column headerText="Arbitro" />
+										<p:column headerText="Nombramiento" />
+									</p:row>
+								</p:columnGroup>
+
+								<p:column>
+									<h:outputText value="#{arbitro.persona.nombreCompleto}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{arbitro.nombramientoSorteo}" />
+								</p:column>
+							</p:dataTable>
+
+						</p:panel>
+						
+						<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteCasosSorteadosView.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>	
+
+					</p:dataGrid>
+
+				</p:panelGrid>
+			</p:panel>
+		</h:form>
+	</h:body>
+</ui:composition>

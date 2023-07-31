@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+</h:head>
+<h:body >
+	<f:event listener="#{controladorReporteCasosCerradosView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<h:form>
+	<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteCasosCerradosView.postConstruct}"/>
+		<p:panel id="infoCaso" header="Casos cerrados"
+			style="margin-bottom:20px">
+
+			<p:panelGrid columns="4"  columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"  styleClass="contentGrid"   cellspacing="10"  layout="grid">
+				<p:outputLabel for="fechaIni" value="Fecha Inicial*" />
+				<p:calendar id="fechaIni" locale="es"
+					value="#{controladorReporteCasosCerradosView.fechaInicialSeleccionada}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha inicial no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteCasosCerradosView.onDateSelect}" />
+				</p:calendar>
+
+				<p:outputLabel for="fechaFin" value="Fecha Final*" />
+				<p:calendar id="fechaFin" locale="es"
+					value="#{controladorReporteCasosCerradosView.fechaFinSeleccionada}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha final no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteCasosCerradosView.onDateSelectF}" />
+				</p:calendar>
+				<p:outputLabel for="selectMotivo" value="Motivo de cierre" />
+				<p:selectOneMenu
+					value="#{controladorReporteCasosCerradosView.motivoSeleccionado}"
+					id="selectMotivo" >
+					<f:selectItem itemLabel="TODOS LOS MOTIVOS" itemValue="" />
+					<f:selectItems
+						value="#{controladorReporteCasosCerradosView.motivoCierreDTOs}"
+						var="lS" itemLabel="#{lS.nombre}" itemValue="#{lS.dominioPK}"></f:selectItems>
+				</p:selectOneMenu>
+
+				<p:outputLabel for="selectMateria" value="Materia" />
+				<p:selectOneMenu 
+					value="#{controladorReporteCasosCerradosView.materiaSeleccionada}"
+					id="selectMateria" >
+					<f:selectItem itemLabel="TODAS LAS MATERIAS" itemValue="" />
+					<f:selectItems value="#{controladorReporteCasosCerradosView.materiaDTOs}"
+						var="lm" itemLabel="#{lm.nombre}" itemValue="#{lm.idMateria}"></f:selectItems>
+				</p:selectOneMenu>
+				
+													
+			</p:panelGrid>
+			<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+				<div></div>
+				<p:commandButton value="Exportar a Excel"
+					 icon="fa fa-file-excel-o" disabled="#{controladorReporteCasosCerradosView.visible}" ajax="false">
+					<p:dataExporter type="xls" target="tbl"
+						fileName="#{controladorReporteCasosCerradosView.nombreReporte}" 
+						postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+				</p:commandButton>
+				<h:commandButton update="growl"
+					actionListener="#{controladorReporteCasosCerradosView.buscar}"
+					value="Buscar" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" />
+					
+			</p:panelGrid>	
+		</p:panel>
+		<p:panel>		
+			<p:panelGrid columns="1" layout="grid">
+
+				<p:dataTable id="tbl" var="reporte" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorReporteCasosCerradosView.reporteCasosCerradosDTOs}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" style="margin-bottom:20px"
+					scrollable="true" scrollWidth="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}"
+					rows="10" rowsPerPageTemplate="5,10,20"
+					rowIndexVar="rowIndex">
+
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Consecutivo" />
+						</f:facet>
+						<h:outputText  value="#{rowIndex+1}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Código del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.codigoCaso}" />
+					</p:column>
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Servicio" />
+						</f:facet>
+						<h:outputText value="#{reporte.servicioCaso}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Nombre del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombreCaso}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Fecha radicación" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaRadicacion}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Valor de las pretensiones" />
+						</f:facet>
+						<h:outputText value="#{reporte.valorPretensiones}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Materia" />
+						</f:facet>
+						<h:outputText value="#{reporte.materia}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Apoderado demandante" />
+						</f:facet>
+						<h:outputText value="#{reporte.apoderadoDemandante}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Apoderado demandado" />
+						</f:facet>
+						<h:outputText value="#{reporte.apoderadoDemandado}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Árbitros" />
+						</f:facet>
+						<h:outputText value="#{reporte.arbitros}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Secretario" />
+						</f:facet>
+						<h:outputText value="#{reporte.secretario}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Fecha decisión" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaCierre}" />
+					</p:column>
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Consumo" />
+						</f:facet>
+						<h:outputText value="#{reporte.consumo}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Motivo de cierre" />
+						</f:facet>
+						<h:outputText value="#{reporte.motivoCierre}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Observaciones cierre" />
+						</f:facet>
+						<h:outputText value="#{reporte.observacionesCierre}" />
+					</p:column>
+					
+					<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteCasosCerradosView.totalCasos}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+				</p:dataTable>
+			</p:panelGrid>
+		</p:panel>
+	</h:form>
+</h:body>
+</ui:composition>

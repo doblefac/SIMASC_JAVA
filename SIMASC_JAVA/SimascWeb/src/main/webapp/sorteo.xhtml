@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<h:outputStylesheet name="css/jsfcrud.css" />
+</h:head>
+<h:body>
+	<h1 class="titulo-opcion">Lista de casos</h1>
+	<h:form id="frmListaCasos">
+		<p:growl id="growl" showDetail="true" sticky="true" />
+		<p:panel id="basic" style="margin-bottom:20px"
+			rendered="#{controladorSorteoView.pantalla eq 'primera'}">
+			<ui:include src="listaDeCasosParaSorteoPublicoDeDesignacion.xhtml"></ui:include>
+		</p:panel>
+		<p:panel id="basic2" style="margin-bottom:20px"
+			rendered="#{controladorSorteoView.pantalla eq 'segunda'}">
+			<ui:include src="casoConformacionLista.xhtml"></ui:include>
+		</p:panel>
+		<p:panel id="basic3" style="margin-bottom:20px"
+			rendered="#{controladorSorteoView.pantalla eq 'tercera'}">
+			<ui:include src="resultadoSorteo.xhtml"></ui:include>
+		</p:panel>
+	</h:form>
+	
+	
+	<p:dialog header="Confirmación" closable="false" widgetVar="dlgConfirmacionCancelacion" position="center" 
+		modal="true" id="dlgConfirmacionCancelacion" dynamic="true" >
+		<h:form id="formCan">						
+			<h:panelGrid columns="1" >
+				<h:outputText 
+				value="¿Está seguro de cancelar el sorteo para el caso: " />				
+				<h:outputText 
+					value="#{controladorSorteoView.audienciaCancelar.caso.nombre}" />
+					
+				<p:inputTextarea maxlength="100" rows="2" cols="34" style="margin-bottom:10px; margin-top:10px"
+					value="#{controladorSorteoView.motivoCancelacion}" autoResize="true" placeholder="Ingrese el motivo de la cancelación"/>
+			</h:panelGrid>
+			
+			<h:panelGrid columns="2" cellpadding="5">
+				<p:commandButton id="siBtn" value="Si" styleClass="ui-confirmdialog-yes dialog-button" style="margin-left:50px"
+					 update=":frmListaCasos" process="@form"
+					 icon="ui-icon-check"
+					action="#{controladorSorteoView.cancelarSorteoCaso()}"
+					oncomplete="PF('dlgConfirmacionCancelacion').hide()" />
+				<p:commandButton value="No" styleClass="ui-confirmdialog-no dialog-button"
+					onclick="PF('dlgConfirmacionCancelacion').hide(); return false" 
+					icon="ui-icon-close"/>					
+			</h:panelGrid>
+							
+			<p:blockUI block="formCan" trigger="formCan:siBtn">			    
+				<div class="spinner">
+					<div class="double-bounce1"></div>
+					<div class="double-bounce2"></div>
+				</div>
+				<div class="please-wait">Cancelando Sorteo...</div>			     	    		
+		    </p:blockUI>
+			
+		</h:form>
+		
+		
+												
+	</p:dialog>
+			
+	
+	
+	
+</h:body>
+</html>

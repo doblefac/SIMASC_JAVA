@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+	<h:head>
+	</h:head>
+	<h:body >
+		<f:event listener="#{controladorReporteCasosPorArbitro.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+		<h:form>
+		<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteCasosPorArbitro.postConstruct}"/>
+			<div class="ui-fluid">
+				<p:panel id="infoCaso" header="Casos por Operador"
+					style="margin-bottom:20px">					
+						<p:panelGrid columns="4"
+							columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4" layout="grid"
+							 styleClass="contentGrid"   cellspacing="10">
+							<p:outputLabel for="fechaDesde" value="Nombramiento desde*" />
+							<p:calendar id="fechaDesde" locale="es"
+								value="#{controladorReporteCasosPorArbitro.fechaIni}"
+								pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha desde no es válida"/>
+
+							<p:outputLabel for="fechaHasta" value="Nombramiento hasta*" />
+							<p:calendar id="fechaHasta" locale="es"
+								value="#{controladorReporteCasosPorArbitro.fechaFin}"
+								pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha hasta no es válida"/>
+
+
+							<p:outputLabel for="selectArbitro" value="Árbitro" />
+							<p:selectOneMenu autoWidth="false" 	style="min-width: 0px"
+								value="#{controladorReporteCasosPorArbitro.arbitroSeleccionado}"
+								id="selectArbitro">
+								
+								<f:selectItem itemLabel="Todos los árbitros" itemValue="0" />
+								<f:selectItems
+									value="#{controladorReporteCasosPorArbitro.arbitrosDTOs}"
+									var="ar"
+									itemLabel="#{ar.nombreCompleto}"
+									itemValue="#{ar.idPersona}"></f:selectItems>
+							</p:selectOneMenu>
+
+							<p:outputLabel for="selectPronunciamiento"
+								value="Pronunciamiento" />
+							<p:selectOneMenu autoWidth="false" 	style="min-width: 0px"
+								value="#{controladorReporteCasosPorArbitro.pronunciamientoSeleccionado}"
+								id="selectPronunciamiento">
+								
+								<f:selectItem itemLabel="Todos los pronunciamientos" itemValue="0" />
+								<f:selectItems
+									value="#{controladorReporteCasosPorArbitro.pronunciamientosDTOs}"
+									var="pro" itemLabel="#{pro.nombre}"
+									itemValue="#{pro.dominioPK}"></f:selectItems>
+							</p:selectOneMenu>
+
+							<p:outputLabel for="selectMateria" value="Materia" />
+							<p:selectOneMenu autoWidth="false" 	style="min-width: 0px"
+								value="#{controladorReporteCasosPorArbitro.materiaSeleccionada}"
+								id="selectMateria">
+								
+								<f:selectItem itemLabel="Todas las materias" itemValue="0" />
+								<f:selectItems
+									value="#{controladorReporteCasosPorArbitro.materiaDTOs}"
+									var="lm" itemLabel="#{lm.nombre}" itemValue="#{lm.idMateria}"></f:selectItems>
+							</p:selectOneMenu>
+
+							<p:outputLabel for="selectTipoNombramiento"
+								value="Método de nombramiento" />
+							<p:selectOneMenu autoWidth="false" 	style="min-width: 0px"
+								value="#{controladorReporteCasosPorArbitro.tipoNombramientoSeccionado}"
+								id="selectTipoNombramiento">
+								
+								<f:selectItem itemLabel="Todos los nombramientos" itemValue="0" />
+								<f:selectItems
+									value="#{controladorReporteCasosPorArbitro.tipoNombramientoDTOs}"
+									var="tm" itemLabel="#{tm.nombre}" itemValue="#{tm.dominioPK}"></f:selectItems>
+							</p:selectOneMenu>
+							</p:panelGrid>					
+						<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+							<div></div>
+							<p:commandButton
+								actionListener="#{controladorReporteCasosPorArbitro.exportarExcel}"
+								icon="fa fa-file-excel-o"
+								value="Exportar a Excel" ajax="false"
+								disabled="#{controladorReporteCasosPorArbitro.exportarBloqueado}"
+								immediate="#{!controladorReporteCasosPorArbitro.exportarBloqueado}">
+								<p:dataExporter type="xls" target="tbl"
+									fileName="#{controladorReporteCasosPorArbitro.nombreReporte}" 
+									postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+							</p:commandButton>
+							<h:commandButton
+								actionListener="#{controladorReporteCasosPorArbitro.buscar}"
+								value="Buscar" update="growl"  styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" />
+						</p:panelGrid>
+						<p:panelGrid columns="1" layout="grid">
+
+						<p:dataTable id="tbl" var="caso"
+							emptyMessage="#{bundle.MensajeReporteSinResultado}"
+							value="#{controladorReporteCasosPorArbitro.listaReporte}"
+							paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							paginator="true"
+							rows="#{controladorReporteCasosPorArbitro.filasPaginador}"
+							scrollable="true" scrollWidth="100%"
+							currentPageReportTemplate="{currentPage} de {totalPages}"
+							rowsPerPageTemplate="5,10,20" 
+							rowIndexVar="rowIndex">
+
+
+							<p:column width="80">
+								<f:facet name="header">
+									<h:outputText value="Consecutivo" />
+								</f:facet>
+								<h:outputText value="#{rowIndex+1}" />
+							</p:column>
+							<p:column width="72">
+								<f:facet name="header">
+									<h:outputText value="Código del caso" />
+								</f:facet>
+								<h:outputText value="#{caso.codigoCaso}" />
+							</p:column>							
+							<p:column width="90">
+								<f:facet name="header">
+									<h:outputText value="Servicio" />
+								</f:facet>
+								<h:outputText value="#{caso.tipoCaso}" />
+							</p:column>
+
+							<p:column width="150">
+								<f:facet name="header">
+									<h:outputText value="Nombre del caso" />
+								</f:facet>
+								<h:outputText value="#{caso.nombreCaso}" />
+							</p:column>
+							<p:column width="80">
+								<f:facet name="header">
+									<h:outputText value="Fecha de radicación del caso" />
+								</f:facet>
+								<h:outputText value="#{caso.fechaRadicacionCaso}">
+									<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+								</h:outputText>
+							</p:column>
+
+							<p:column width="80">
+								<f:facet name="header">
+									<h:outputText value="Estado del caso" />
+								</f:facet>
+								<h:outputText value="#{caso.estadoCaso}">
+								</h:outputText>
+							</p:column>
+							<p:column width="90">
+								<f:facet name="header">
+									<h:outputText value="Cuantía" />
+								</f:facet>
+								<h:outputText value="#{caso.cuantia}" style="text-align: right">
+									<f:convertNumber pattern="#0" />
+								</h:outputText>
+							</p:column>
+							<p:column width="80">
+								<f:facet name="header">
+									<h:outputText value="Materia" />
+								</f:facet>
+								<h:outputText value="#{caso.materia}" />
+							</p:column>
+							<p:column width="150">
+								<f:facet name="header">
+									<h:outputText value="Nombre del árbitro" />
+								</f:facet>
+								<h:outputText value="#{caso.arbitro}" />
+							</p:column>
+							<p:column width="120">
+								<f:facet name="header">
+									<h:outputText value="Método de nombramiento" />
+								</f:facet>
+								<h:outputText value="#{caso.tipoNombramiento}" />
+							</p:column>
+							<p:column width="90">
+								<f:facet name="header">
+									<h:outputText value="Fecha de designación" />
+								</f:facet>
+								<h:outputText value="#{caso.fechaDesignacion}">
+									<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+								</h:outputText>
+							</p:column>
+							<p:column width="90">
+								<f:facet name="header">
+									<h:outputText value="Fecha de comunicación" />
+								</f:facet>
+								<h:outputText value="#{caso.fechaComunicacion}">
+									<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+								</h:outputText>
+							</p:column>
+							<p:column width="120">
+								<f:facet name="header">
+									<h:outputText value="Pronunciamiento" />
+								</f:facet>
+								<h:outputText value="#{caso.pronunciamiento}" />
+							</p:column>
+							<p:column width="120">
+								<f:facet name="header">
+									<h:outputText value="Fecha de pronunciamiento" />
+								</f:facet>
+								<h:outputText value="#{caso.fechaPronunciamiento}">
+									<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+								</h:outputText>
+							</p:column>
+							<p:column width="120">
+								<f:facet name="header">
+									<h:outputText value="Consumo" />
+								</f:facet>
+								<h:outputText value="#{caso.consumo}" />
+							</p:column>
+							<p:column width="120">
+								<f:facet name="header">
+									<h:outputText value="Solicita Amparo de Pobreza" />
+								</f:facet>
+								<h:outputText value="#{caso.solicitaAmparo}" />
+							</p:column>
+							<p:column width="120">
+								<f:facet name="header">
+									<h:outputText value="Concede Amparo de Pobreza" />
+								</f:facet>
+								<h:outputText value="#{caso.concedeAmparo}" />
+							</p:column>
+							<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteCasosPorArbitro.totalArbitros}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+							
+						</p:dataTable>
+					</p:panelGrid>
+				</p:panel>
+			</div>
+		</h:form>
+	</h:body>
+</ui:composition>

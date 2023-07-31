@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+	<h:head>
+	</h:head>
+	<h:body >
+		<f:event listener="#{controladorReporteCasoCuantiaView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+		<h:form id="form">
+		<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteCasoCuantiaView.postConstruct}"/>
+			<p:panel id="panel" header="Cuantía de las pretensiones"
+				style="margin-bottom:10px;">
+				<p:panelGrid columns="4" columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"  styleClass="contentGrid"   cellspacing="10"  layout="grid">
+					<p:outputLabel for="fechaIni" value="Fecha Inicial*" />
+				<p:calendar id="fechaIni" locale="es"
+					value="#{controladorReporteCasoCuantiaView.fechaInicial}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha inicial no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteCasoCuantiaView.onDateSelect}" />
+				</p:calendar>
+				<p:outputLabel for="fechaFin" value="Fecha Final*" />
+				<p:calendar id="fechaFin" locale="es"
+					value="#{controladorReporteCasoCuantiaView.fechaFinal}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha final no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteCasoCuantiaView.onDateSelectF}" />
+				</p:calendar>
+					<p:outputLabel for="selectCuantia" value="Tipo de cuantía" />
+					<p:selectOneMenu
+						value="#{controladorReporteCasoCuantiaView.seleccionCuantia}"
+						id="selectCuantia" required="true" >
+						<f:selectItem itemLabel="Todas las cuantías" itemValue="TODOS" />
+						<f:selectItems
+							value="#{controladorReporteCasoCuantiaView.dominiosTipoCuantia}"
+							var="lS" itemLabel="#{lS.nombre}"
+							itemValue="#{lS.dominioPK.codigo}"></f:selectItems>
+					</p:selectOneMenu>
+					<p:outputLabel for="seleccionCaso" value="Servicio" />
+					<p:selectOneMenu id="seleccionCaso"
+						value="#{controladorReporteCasoCuantiaView.seleccionCaso}"
+					    required="true"
+						requiredMessage="Sr. Usuario por favor diligenciar los campos obligatorios para la consulta">
+						<f:selectItem itemLabel="Todos los casos" itemValue="0" />							
+						<f:selectItems
+							value="#{controladorReporteCasoCuantiaView.dominiosTipoCaso}"
+							var="lS" itemLabel="#{lS.nombre}" itemValue="#{lS.idServicio}"></f:selectItems>						
+					</p:selectOneMenu>
+				</p:panelGrid>
+				<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>					
+					<p:commandButton value="Exportar Excel" icon="fa fa-file-excel-o" disabled="#{controladorReporteCasoCuantiaView.isBotonExcelDisabled()}" ajax="false" >
+						<p:dataExporter type="xls" target="tbl"
+							fileName="#{controladorReporteCasoCuantiaView.nombreReporte}"
+							postProcessor="#{controladorReporteCasoCuantiaView.postProcessXLS}" />
+					</p:commandButton>					
+					<h:commandButton update="growl" actionListener="#{controladorReporteCasoCuantiaView.generarReporte}" 
+					value="Buscar" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"/>
+				</p:panelGrid>
+			</p:panel>
+			<p:panelGrid columns="1" layout="grid">
+				<p:dataTable id="tbl" var="reporte"
+					value="#{controladorReporteCasoCuantiaView.reporteCasoCuantiaDTOs}"
+					emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true"
+					rows="#{controladorReporteCasoCuantiaView.resultadoPagina}"
+					style="margin-bottom:20px" scrollable="true" scrollWidth="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}"
+					rowsPerPageTemplate="5,10,20">
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Nombre del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombreCaso}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Fecha radicación del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaCaso}">
+							<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+						</h:outputText>
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Servicio" />
+						</f:facet>
+						<h:outputText value="#{reporte.tipoCaso}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Materia del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.materia}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Tipo de cuantía" />
+						</f:facet>
+						<h:outputText value="#{reporte.tipoCuantia}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Valor de las pretensiones" />
+						</f:facet>
+						<h:outputText value="#{reporte.valorPretension}">
+							<f:convertNumber pattern="¤#,##0.00" currencySymbol="$" />
+						</h:outputText>						
+					</p:column>					
+					
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Consumo" />
+						</f:facet>
+						<h:outputText value="#{reporte.consumo}" />
+					</p:column>
+									
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Solicita Amparo de Pobreza" />
+						</f:facet>
+						<h:outputText value="#{reporte.amparoDePobreza}" />
+					</p:column>
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Concede Amparo" />
+						</f:facet>
+						<h:outputText value="#{reporte.concedeAmparo}" />
+					</p:column>
+					<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteCasoCuantiaView.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+				</p:dataTable>
+			</p:panelGrid>
+
+		</h:form>
+	</h:body>
+</ui:composition>

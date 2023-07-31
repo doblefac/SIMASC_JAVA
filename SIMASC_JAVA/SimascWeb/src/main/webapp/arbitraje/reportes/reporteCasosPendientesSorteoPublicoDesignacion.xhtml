@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+</h:head>
+<h:body >
+	<f:event listener="#{controladorReporteCasosPendientesSorteoPublicoDesignacionView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<h:form>
+	<p:growl id="growl" showDetail="true" sticky="true" />
+	<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteCasosPendientesSorteoPublicoDesignacionView.postConstruct}"/>	
+		<p:panel>
+			<p:panelGrid columns="4" columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"  styleClass="contentGrid"   cellspacing="10"  layout="grid">
+			</p:panelGrid>
+			<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>
+					<div></div>
+					<p:commandButton value="Exportar a Excel"  icon="fa fa-file-excel-o" disabled="#{controladorReporteCasosPendientesSorteoPublicoDesignacionView.visible}" ajax="false">
+						<p:dataExporter type="xls" target="tbl"
+							fileName="#{controladorReporteCasosPendientesSorteoPublicoDesignacionView.nombreReporte}" 
+							postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+					</p:commandButton>
+			</p:panelGrid>	
+			<p:panelGrid columns="1" layout="grid">
+
+				<p:dataTable id="tbl" var="reporte" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorReporteCasosPendientesSorteoPublicoDesignacionView.reporteCasosPendientesSorteoPublicoDesignacionDTOs}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" style="margin-bottom:20px"
+					scrollable="true" scrollWidth="98%"
+					currentPageReportTemplate="{currentPage} de {endRecord}"
+					rows="10" rowsPerPageTemplate="5,10,20">
+
+
+					<p:column style="width:50px;">
+						<f:facet name="header">
+							<h:outputText value="Código del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.codigoCaso}" />
+					</p:column>
+
+					<p:column style="width:300px;">
+						<f:facet name="header">
+							<h:outputText value="Nombre del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombreCaso}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Tipo de cuantía" />
+						</f:facet>
+						<h:outputText value="#{reporte.tipoCuantia}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Valor de las pretensiones" />
+						</f:facet>
+						<h:outputText value="#{reporte.valorPretensiones}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Servicio" />
+						</f:facet>
+						<h:outputText value="#{reporte.tipoServicio}" />
+					</p:column>
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Materia" />
+						</f:facet>
+						<h:outputText value="#{reporte.materia}" />
+					</p:column>
+
+					<p:column style="width:80px;">
+						<f:facet name="header">
+							<h:outputText value="Fecha de sorteo" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaSorteo}" />
+					</p:column>
+
+					<p:column style="width:80px;">
+						<f:facet name="header">
+							<h:outputText value="Cantidad árbitros principales" />
+						</f:facet>
+						<h:outputText value="#{reporte.arbitrosPrincipales}" />
+					</p:column>
+					
+					<p:column style="width:80px;">
+						<f:facet name="header">
+							<h:outputText value="Cantidad árbitros suplentes" />
+						</f:facet>
+						<h:outputText value="#{reporte.arbitrosSuplentes}" />
+					</p:column>
+					
+					<p:column style="width:80px;">
+						<f:facet name="header">
+							<h:outputText value="Consumo" />
+						</f:facet>
+						<h:outputText value="#{reporte.consumo}" />
+					</p:column>
+
+					<p:column style="width:80px;">
+						<f:facet name="header">
+							<h:outputText value="Preselección" />
+						</f:facet>
+						<h:outputText value="#{reporte.preseleccion}" />
+					</p:column>
+					
+					<p:column style="width:80px;">
+						<f:facet name="header">
+							<h:outputText value="Tipo de Preselección " />
+						</f:facet>
+						<h:outputText value="#{reporte.tipoPreseleccion}" />
+					</p:column>
+							
+					<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteCasosPendientesSorteoPublicoDesignacionView.totalArbitros}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>		
+															
+				</p:dataTable>
+
+			</p:panelGrid>
+
+
+		</p:panel>
+
+
+	</h:form>
+</h:body>
+</ui:composition>

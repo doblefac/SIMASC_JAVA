@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+	<head>
+		<title>SIMASC - Cámara de Comercio de Bogotá;</title>
+		<link href="resources/css/main.css" rel="stylesheet" type="text/css" />
+		<link
+			href="http://recursos.ccb.org.co/ccb/recursos-aplicaciones/images/ccb.ico"
+			rel="shortcut icon" />
+			
+			
+		<link href="resources/css/loginStyle.css" rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"/>
+
+		<link href="http://recursos.ccb.org.co/ccb/recursos-aplicaciones/images/ccb.ico" rel="shortcut icon" />
+		
+		<!-- Fuente alterna -->
+		<link
+			href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic"
+			rel="stylesheet" type="text/css" />
+		<link rel="stylesheet" type="text/css" href="https://recursos.ccb.org.co/ccb/recursos-aplicaciones/CCB-Tipografia/CCB-Tipografia.css" />
+		
+		<!-- Script para enmascarar las contraseñas -->
+		<script type="text/javascript" src="resources/js/MaskedPassword.js"></script>
+</head>
+	<body>
+		<p:growl id="growl" showDetail="true" sticky="true"/>
+		<h:form id="Login">
+			<div class="container">
+			<main id="content" class="widget-login-container" role="main"	>
+			<div class="row">
+			
+				<div class="col-md-4"></div>
+				<div class="col-md-4">
+				
+					<h5 class="widget-login-logo animated fadeInUp">
+						<img src="resources/images/cac-ccb.png"  style="margin:5px; width: 100%" alt="CCB" class="img-responsive" border="0"></img>
+					</h5>
+
+					<section class="widget widget-login animated fadeInUp"> 					
+					<header>
+						<h3>Acceso a SIMASC INTRANET</h3>
+					</header> 
+					
+					 <div class="form-group">
+					    <label for="userInput">Usuario *</label>
+					    <h:inputText id="Usuario" value="#{autenticacion.username}" styleClass="form-control"></h:inputText>
+					 </div>
+					 
+					 <div class="form-group">
+					    <label for="password">Clave *</label>
+					    <input type="password" id="Clave" value="#{autenticacion.password}" class="form-control" name="password" autocomplete="new-password"></input>
+					 </div>
+																				
+					<p:commandButton action="#{autenticacion.autenticarUsuario}" value="Ingresar" styleClass="btn btn-primary" style="width:100%"></p:commandButton>
+					
+					<div class="salto"><br/></div>
+					<p:messages id="messages" showDetail="true" autoUpdate="true" closable="true" />					
+					
+					
+					</section>
+					
+									
+				</div>
+				<div class="col-md-4"></div>
+				
+			</div>
+			</main>
+			<footer class="page-footer">
+    			2022 Cámara de comercio de Bogotá.
+  			</footer>
+			
+			</div>
+		</h:form>
+		
+		<script type="text/javascript">
+			//apply masking to the Clave field
+			//pass the field reference, masking symbol, and character limit
+			new MaskedPassword(document.getElementById("Clave"), '\u25CF');
+		</script>
+		
+	</body>
+</html>

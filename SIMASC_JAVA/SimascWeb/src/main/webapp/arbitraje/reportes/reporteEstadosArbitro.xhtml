@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:pe="http://primefaces.org/ui/extensions">
+	<h:head>
+		<title>Facelet Title</title>
+	</h:head>
+	<h:body >
+		<f:event listener="#{ctrlEstadosArbitro.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+		<h:form>
+		<p:remoteCommand  id="reset" name="reset" action="#{ctrlEstadosArbitro.postConstruct}"/>
+			<p:panel id="infoCaso" header="Estados por operador"
+				style="margin-bottom:20px"> 
+				<p:panelGrid columns="4" columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"
+					styleClass="contentGrid" cellspacing="10"  layout="grid">
+					<p:outputLabel for="idSOMArbitro" value="Operador" />
+					<p:selectOneMenu value="#{ctrlEstadosArbitro.arbitroSeleccionado}"
+						id="idSOMArbitro" style="width: 150px;">
+						<f:selectItem itemLabel="Seleccione..." itemValue="-1" />
+						<f:selectItems value="#{ctrlEstadosArbitro.arbitros}"
+							var="arbitro" itemLabel="#{arbitro.nombreCompleto}"
+							itemValue="#{arbitro.idPersona}"></f:selectItems>
+					</p:selectOneMenu>
+				</p:panelGrid>
+				<p:panelGrid columns="3"
+					columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2"
+					styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>
+					<p:commandButton value="Exportar a Excel"
+						icon="fa fa-file-excel-o"  disabled="#{ctrlEstadosArbitro.exportarBloqueado}" ajax="false" >
+						<p:dataExporter type="xls" target="dtCasosArbitro,dtRolesArbitro,dtMateriasArbitro,dtEstadosArbitro"
+							fileName="#{ctrlEstadosArbitro.nombreReporte}"
+							postProcessor="#{ctrlEstadosArbitro.generarXLS}" />
+							
+					</p:commandButton> 
+					<h:commandButton
+						actionListener="#{ctrlEstadosArbitro.alSeleccionarArbitro()}"
+						styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" value="Buscar" update="growl, btnExportar" />
+				</p:panelGrid>
+
+				<p:panelGrid columns="1" layout="grid">
+				
+					<!--  ******************************** CASOS ASIGNADOS ****************************************************** -->
+
+					<p:dataTable id="dtCasosArbitro" var="caso"
+						emptyMessage="#{bundle.MensajeReporteSinResultado}"
+						value="#{ctrlEstadosArbitro.casosArbitro}"
+						paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" rows="20" style="margin-bottom:20px"
+						scrollable="true" scrollWidth="100%" width="100%"
+						currentPageReportTemplate="{currentPage} de {totalPages}"
+						rowsPerPageTemplate="5,10,20">
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Código del caso" />
+							</f:facet>
+							<h:outputText value="#{caso.codigoCaso}" />
+						</p:column>
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Servicio" />
+							</f:facet>
+							<h:outputText value="#{caso.tipoCaso}" />
+						</p:column>
+						
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Nombre del caso" />
+							</f:facet>
+							<h:outputText value="#{caso.nombreCaso}" />
+						</p:column>
+
+						<p:column >
+							<f:facet name="header">
+								<h:outputText value="Fecha de radicación del caso" />
+							</f:facet>
+							<h:outputText value="#{caso.fechaRadicacionCaso}">
+								<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+							</h:outputText>
+						</p:column>
+
+						<p:column >
+							<f:facet name="header">
+								<h:outputText value="Materia" />
+							</f:facet>
+							<h:outputText value="#{caso.materiaCaso}" />
+						</p:column>
+
+						<p:column >
+							<f:facet name="header">
+								<h:outputText value="Cuantía" />
+							</f:facet>
+							<h:outputText value="#{caso.cuantia}" style="text-align: right">
+								
+							</h:outputText>
+						</p:column>
+
+						<p:column >
+							<f:facet name="header">
+								<h:outputText value="Método de nombramiento" />
+							</f:facet>
+							<h:outputText value="#{caso.metodoNombramiento}"
+								style="text-align: right" />
+						</p:column>
+						
+						<p:column >
+							<f:facet name="header">
+								<h:outputText value="Tipo de nombramiento" />
+							</f:facet>
+							<h:outputText value="#{caso.tipoNombramiento}"
+								style="text-align: right" />
+						</p:column>
+						
+						<p:column >
+							<f:facet name="header">
+								<h:outputText value="Fecha de nombramiento" />
+							</f:facet>
+							<h:outputText value="#{caso.fechaNombramiento}">
+								<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+							</h:outputText>
+						</p:column>
+						
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Rol" />
+							</f:facet>
+							<h:outputText value="#{caso.rol}"
+								style="text-align: right" />
+						</p:column>
+						
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Consumo" />
+							</f:facet>
+							<h:outputText value="#{caso.consumo}"
+								style="text-align: right" />
+						</p:column>
+						
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Preselección" />
+							</f:facet>
+							<h:outputText value="#{caso.preseleccion}"
+								style="text-align: right" />
+						</p:column>
+						
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Tipo Preselección" />
+							</f:facet>
+							<h:outputText value="#{caso.tipoPreseleccion}"
+								style="text-align: right" />
+						</p:column>
+
+						<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{ctrlEstadosArbitro.totalCasos}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+					</p:dataTable>
+					
+					<!-- ******************************** ROLES ****************************************** -->
+
+					<p:dataTable id="dtRolesArbitro" var="rol"
+						emptyMessage="#{bundle.MensajeReporteSinResultado}"
+						value="#{ctrlEstadosArbitro.rolesArbitro}"
+						paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" rows="20" style="margin-bottom:20px"
+						scrollable="true" scrollWidth="100%" width="100%"
+						currentPageReportTemplate="{currentPage} de {totalPages}"
+						rowsPerPageTemplate="5,10,20">
+
+						<p:column width="80">
+							<f:facet name="header">
+								<h:outputText value="Rol" />
+							</f:facet>
+							<h:outputText value="#{rol.rol}" />
+						</p:column>
+
+						<p:column width="80">
+							<f:facet name="header">
+								<h:outputText value="Lista" />
+							</f:facet>
+							<h:outputText value="#{rol.lista}" />
+						</p:column>
+
+						<p:column width="72">
+							<f:facet name="header">
+								<h:outputText value="Fecha asignación" />
+							</f:facet>
+							<h:outputText value="#{rol.fechaAsignacion}">
+								<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+							</h:outputText>
+						</p:column>
+						
+						<p:column width="72">
+							<f:facet name="header">
+								<h:outputText value="Fecha de finalización" />
+							</f:facet>
+							<h:outputText value="#{rol.fechaFinalizacion}">
+								<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+							</h:outputText>
+						</p:column>
+						
+						<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{ctrlEstadosArbitro.totalRoles}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+
+					</p:dataTable>
+					
+					<!-- ******************************** MATERIAS ****************************************** -->
+
+					<p:dataTable id="dtMateriasArbitro" var="materia"
+						emptyMessage="#{bundle.MensajeReporteSinResultado}"
+						value="#{ctrlEstadosArbitro.materiasArbitro}"
+						paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" rows="20" style="margin-bottom:20px"
+						scrollable="true" scrollWidth="100%" width="100%"
+						currentPageReportTemplate="{currentPage} de {totalPages}"
+						rowsPerPageTemplate="5,10,20">
+
+						<p:column width="80">
+							<f:facet name="header">
+								<h:outputText value="Rol" />
+							</f:facet>
+							<h:outputText value="#{materia.rol}" />
+						</p:column>
+
+						<p:column width="80">
+							<f:facet name="header">
+								<h:outputText value="Materia" />
+							</f:facet>
+							<h:outputText value="#{materia.nombreMateria}" />
+						</p:column>
+
+						<p:column width="72">
+							<f:facet name="header">
+								<h:outputText value="Fecha asignación" />
+							</f:facet>
+							<h:outputText value="#{materia.fechaAsignacion}">
+								<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+							</h:outputText>
+						</p:column>
+						
+						<p:column width="72">
+							<f:facet name="header">
+								<h:outputText value="Fecha de finalización" />
+							</f:facet>
+							<h:outputText value="#{materia.fechaFinalizacion}">
+								<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+							</h:outputText>
+						</p:column>						
+						
+						<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{ctrlEstadosArbitro.totalMaterias}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+
+					</p:dataTable>
+					
+					<!-- ******************************** HISTORICO ESTADOS ****************************************** -->
+
+					<p:dataTable id="dtEstadosArbitro" var="estado"
+						emptyMessage="#{bundle.MensajeReporteSinResultado}"
+						value="#{ctrlEstadosArbitro.estadosArbitro}"
+						paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" rows="20" style="margin-bottom:20px"
+						scrollable="true" scrollWidth="100%" width="100%"
+						currentPageReportTemplate="{currentPage} de {totalPages}"
+						rowsPerPageTemplate="5,10,20">
+						<p:column width="20%">
+							<f:facet name="header">
+								<h:outputText value="Servicio" />
+							</f:facet>
+							<h:outputText value="#{estado.servicio}" />
+						</p:column>
+
+						<p:column width="20%">
+							<f:facet name="header">
+								<h:outputText value="Rol" />
+							</f:facet>
+							<h:outputText value="#{estado.rol}" />
+						</p:column>
+
+						<p:column width="20%">
+							<f:facet name="header">
+								<h:outputText value="Materia" />
+							</f:facet>
+							<h:outputText value="#{estado.materia}" />
+						</p:column>
+						
+						<p:column width="20%">
+							<f:facet name="header">
+								<h:outputText value="Estado" />
+							</f:facet>
+							<h:outputText value="#{estado.estado}" />
+						</p:column>
+						
+						<p:column width="20%">
+							<f:facet name="header">
+								<h:outputText value="Motivo" />
+							</f:facet>
+							<h:outputText value="#{estado.motivo}" />
+						</p:column>
+
+						<p:column width="20%">
+							<f:facet name="header">
+								<h:outputText value="Fecha asignación" />
+							</f:facet>
+							<h:outputText value="#{estado.fechaAsignacion}">
+								<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+							</h:outputText>
+						</p:column>
+						
+						<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{ctrlEstadosArbitro.totalEstados}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+
+					</p:dataTable>
+					
+
+				</p:panelGrid>
+			</p:panel>
+		</h:form>
+	</h:body>
+</ui:composition>

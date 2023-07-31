@@ -1,0 +1,10 @@
+.metadata/
+target/
+*.zip
+.settings/
+*.classpath
+*.project
+*.component
+RemoteSystemsTempFiles/
+/.recommenders/
+*.class

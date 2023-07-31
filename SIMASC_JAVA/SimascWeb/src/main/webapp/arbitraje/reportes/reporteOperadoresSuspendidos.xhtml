@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+<title>ReporteOperadoresSuspendidos</title>
+</h:head>
+<h:body >
+	<f:event listener="#{controladorReporteOperadoresSuspendidosView.preRenderCompO()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<h:form>
+	<p:remoteCommand  id="reset" name="reset" action="#{controladorRadicacionDocumentosView.postConstructO}"/>
+		<p:panel id="infoCaso" header="Reporte operadores suspendidos"
+			style="margin-bottom:20px">
+
+			<p:panelGrid columns="4"  columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"  styleClass="contentGrid"   cellspacing="10"  layout="grid">
+				<p:outputLabel for="fechaIni" value="Fecha Inicial" />
+				<p:calendar id="fechaIni" locale="es"
+					value="#{controladorReporteOperadoresSuspendidosView.fechaInicialSeleccionada}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha inicial no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteOperadoresSuspendidosView.onDateSelect}" />
+				</p:calendar>
+
+				<p:outputLabel for="fechaFin" value="Fecha Final" />
+				<p:calendar id="fechaFin" locale="es"
+					value="#{controladorReporteOperadoresSuspendidosView.fechaFinSeleccionada}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha final no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteOperadoresSuspendidosView.onDateSelectF}" />
+				</p:calendar>				
+				<p:outputLabel for="selectTipoCaso" value="Servicio" />
+					<p:selectOneMenu
+						value="#{controladorReporteOperadoresSuspendidosView.tipoCasoSeleccionadoReporte}"
+						id="selectTipoCaso">
+						<f:selectItem itemLabel="Seleccione" itemValue="" />
+						<f:selectItems
+							value="#{controladorReporteOperadoresSuspendidosView.tipoCasoDTOs}"
+							var="lS" itemLabel="#{lS.nombre}" itemValue="#{lS.idServicio}"></f:selectItems>						
+					</p:selectOneMenu>					
+					
+					<p:outputLabel for="selectMotivo" value="Motivo de suspensión" />
+					<p:selectOneMenu autoWidth="false" 	style="min-width: 0px"
+						value="#{controladorReporteOperadoresSuspendidosView.motivoSeleccionado}"
+						id="selectMotivo">						
+						<f:selectItem itemLabel="Seleccione" itemValue="0" />
+						<f:selectItems value="#{controladorReporteOperadoresSuspendidosView.motivoDTOs}"
+							var="pro" itemLabel="#{pro.nombre}" itemValue="#{pro.dominioPK}"></f:selectItems>
+					</p:selectOneMenu>									
+					<p:outputLabel for="idSOMArbitro" value="Operador" />
+					<p:selectOneMenu value="#{controladorReporteOperadoresSuspendidosView.arbitroSeleccionado}"
+						id="idSOMArbitro" style="width: 150px;">
+						<f:selectItem itemLabel="Seleccione..." itemValue="-1" />
+						<f:selectItems value="#{controladorReporteOperadoresSuspendidosView.arbitros}"
+							var="arbitro" itemLabel="#{arbitro.nombreCompleto}"
+							itemValue="#{arbitro.idPersona}"></f:selectItems>
+				</p:selectOneMenu>
+					
+													
+			</p:panelGrid>
+			<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+				<div></div>
+				<p:commandButton value="Exportar a Excel"
+					 icon="fa fa-file-excel-o" disabled="#{controladorReporteOperadoresSuspendidosView.visible}" ajax="false">
+					<p:dataExporter type="xls" target="tbl"
+						fileName="#{controladorReporteOperadoresSuspendidosView.nombreReporte}" 
+						postProcessor="#{controladorReporteOperadoresSuspendidosView.generarXLS}" />
+				</p:commandButton>
+				<h:commandButton update="growl"
+					actionListener="#{controladorReporteOperadoresSuspendidosView.botonBuscar}"
+					value="Buscar" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" />
+				.
+					
+			</p:panelGrid>	
+		</p:panel>
+		<p:panel>		
+			<p:panelGrid columns="1" layout="grid">
+
+				<p:dataTable id="tbl" var="reporteD" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorReporteOperadoresSuspendidosView.reporte}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" style="margin-bottom:20px"
+					scrollable="true" scrollWidth="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}"
+					rows="10" rowsPerPageTemplate="5,10,20"
+					rowIndexVar="rowIndex">
+
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Consecutivo" />
+						</f:facet>
+						<h:outputText  value="#{rowIndex+1}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Servicio" />
+						</f:facet>
+						<h:outputText value="#{reporteD.servicio}" />
+					</p:column>
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Operador" />
+						</f:facet>
+						<h:outputText value="#{reporteD.operador}" />
+					</p:column>
+					
+				<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Rol" />
+						</f:facet>
+						<h:outputText value="#{reporteD.rol}" />
+					</p:column>
+				
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Motivo de suspensión" />
+						</f:facet>
+						<h:outputText value="#{reporteD.motivo}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Fecha de inicio" />
+						</f:facet>
+						<h:outputText value="#{reporteD.fechaInicial}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Fecha de finalización" />
+						</f:facet>
+						<h:outputText value="#{reporteD.fechaFinal}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Código Caso" />
+						</f:facet>
+						<h:outputText value="#{reporteD.codigoCaso}" />
+					</p:column>
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Caso por el que se suspendió" />
+						</f:facet>
+						<h:outputText value="#{reporteD.nombreCaso}" />
+					</p:column>
+					
+					
+
+
+					
+					
+					<f:facet name="footerD">
+							<h:outputText value="Total registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteOperadoresSuspendidosView.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+				</p:dataTable>
+			</p:panelGrid>
+		</p:panel>
+	</h:form>
+</h:body>
+</ui:composition>

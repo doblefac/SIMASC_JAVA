@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+	<h:head>
+	</h:head>
+	<h:body >
+		<f:event listener="#{controladorReporteIngresosView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+		<h:form>
+		<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteIngresosView.postConstruct}"/>
+			<p:panel id="infoCaso" header="Reporte de ingresos"
+				style="margin-bottom:20px">
+				<p:panelGrid columns="4"
+					columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"
+					layout="grid" styleClass="contentGrid"   cellspacing="10" >
+
+					<p:outputLabel for="fechaIni" value="Fecha Inicial*" />
+					<p:calendar id="fechaIni" locale="es"
+						value="#{controladorReporteIngresosView.fechaInicialSeleccionada}"
+						pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha inicial no es válida">
+						<p:ajax event="dateSelect"
+							listener="#{controladorReporteIngresosView.onDateSelect}" />
+					</p:calendar>
+
+					<p:outputLabel for="fechaFin" value="Fecha Final*" />
+					<p:calendar id="fechaFin" locale="es"
+						value="#{controladorReporteIngresosView.fechaFinSeleccionada}"
+						pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha final no es válida">
+						<p:ajax event="dateSelect"
+							listener="#{controladorReporteIngresosView.onDateSelectF}" />
+					</p:calendar>
+
+					<p:outputLabel for="selectLista" value="Pagados" />
+					<p:selectOneMenu
+						value="#{controladorReporteIngresosView.pagoSeleccionado}"
+						id="selectLista">
+						<f:selectItem itemLabel="Todos" itemValue="" />
+						<f:selectItems
+							value="#{controladorReporteIngresosView.pagadosDTOs}" var="lS"
+							itemLabel="#{lS.nombre}" itemValue="#{lS.dominioPK}"></f:selectItems>
+					</p:selectOneMenu>
+
+				
+
+				</p:panelGrid>
+				<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>
+					<p:commandButton value="Exportar a Excel"
+						icon="fa fa-file-excel-o" 
+						disabled="#{controladorReporteIngresosView.visible}" ajax="false">
+						<p:dataExporter type="xls" target="tbl"
+							fileName="#{controladorReporteIngresosView.nombreReporte}" 
+							postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+					</p:commandButton>
+					<h:commandButton
+						actionListener="#{controladorReporteIngresosView.buscar}"
+						value="Buscar" update="growl" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"/>
+					
+				</p:panelGrid>
+
+				<p:panelGrid columns="1" layout="grid">
+
+					<p:dataTable id="tbl" var="reporte"
+						value="#{controladorReporteIngresosView.reporteIngresosDTOs}"
+						emptyMessage="#{bundle.MensajeReporteSinResultado}"
+						paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true" style="margin-bottom:20px" scrollable="true"
+						scrollWidth="100%" width="100%"
+						currentPageReportTemplate="{currentPage} de {totalPages}"
+						rows="10" rowsPerPageTemplate="5,10,20">
+
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Nombre del caso" />
+							</f:facet>
+							<h:outputText value="#{reporte.nombreCaso}" />
+						</p:column>
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Secretario" />
+							</f:facet>
+							<h:outputText value="#{reporte.secretario}" />
+						</p:column>
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Tipo de parte" />
+							</f:facet>
+							<h:outputText value="#{reporte.tipoParte}" />
+						</p:column>
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Teléfono" />
+							</f:facet>
+							<h:outputText value="#{reporte.telefono}" />
+						</p:column>
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Valor fijado" />
+							</f:facet>
+							<h:outputText value="#{reporte.valorFijado}" />
+						</p:column>
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Fecha de fijación" />
+							</f:facet>
+							<h:outputText value="#{reporte.fechaDeFijacion}" />
+						</p:column>
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Fecha límite de pago" />
+							</f:facet>
+							<h:outputText value="#{reporte.fechaLimiteDePago}" />
+						</p:column>
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Valor pagado" />
+							</f:facet>
+							<h:outputText value="#{reporte.valorPagado}" />
+						</p:column>
+
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Fecha de pago" />
+							</f:facet>
+							<h:outputText value="#{reporte.fechaDePago}" />
+						</p:column>
+						
+						<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteIngresosView.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+
+					</p:dataTable>
+				</p:panelGrid>
+			</p:panel>
+		</h:form>
+	</h:body>
+</ui:composition>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+	<h:head>
+				
+	</h:head>
+		
+
+	<h:body>
+		<h1 class="titulo-opcion">Lista de reportes</h1>
+		<p:growl id="growl" showDetail="true" sticky="false" life="5000"/>
+		<h:form>
+			<h:panelGrid columns="2" styleClass="centerElement"
+				style="margin-bottom:10px" cellpadding="5">
+				<p:outputLabel for="reportesDisponibles"
+					value="Reportes disponibles:" />
+				<p:selectOneMenu id="reportesDisponibles"
+					value="#{controladorContenedorReportes.reporteSeleccionado}"
+					effect="fold" filter="true" filterMatchMode="contains"
+					style="width:160px" panelStyle="width:180px">
+					<f:selectItem itemLabel="Seleccione un reporte" itemValue="" />
+					<f:selectItems value="#{controladorContenedorReportes.reporteDTO}"
+						var="reporteI" itemLabel="#{reporteI.clave}" itemValue="#{reporteI.valor}" />
+						
+				</p:selectOneMenu>
+			</h:panelGrid>
+			<div class="centerElement centerChilds">
+				<f:ajax render=":content">
+					<p:commandButton
+						onclick="submit();"
+						value="Seleccionar reporte">
+					</p:commandButton>
+				</f:ajax>
+			</div>
+
+		</h:form>
+		<div class="ui-fluid">
+			<h:panelGroup id="content" layout="block">
+				<ui:include id="reportView"
+					src="#{controladorContenedorReportes.reporteUrl}"
+					style="width:100%"></ui:include>
+			</h:panelGroup>
+		</div>
+		
+	</h:body>
+
+</ui:composition>

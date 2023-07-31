@@ -1,0 +1,2668 @@
+package com.ccb.simasc.negocio.arbitraje;
+
+import static com.ccb.simasc.transversal.utilidades.UtilConsultasSQL.conComillasSimples;
+import static com.ccb.simasc.transversal.utilidades.UtilOperaciones.formatearFechaReporte;
+import static com.ccb.simasc.transversal.utilidades.UtilOperaciones.formatearNumeroDecimal;
+import static com.ccb.simasc.transversal.utilidades.UtilOperaciones.nvl;
+import static com.ccb.simasc.transversal.utilidades.UtilOperaciones.obtenerDiasHabilesEntreFechas;
+import static com.ccb.simasc.transversal.utilidades.UtilOperaciones.obtenerFechaComienzoDelDia;
+import static com.ccb.simasc.transversal.utilidades.UtilOperaciones.obtenerFechaFinDelDia;
+
+import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import javax.ejb.EJB;
+import javax.ejb.LocalBean;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.persistence.TemporalType;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+
+import com.ccb.simasc.comun.fachada.interfaces.IDominioFacade;
+import com.ccb.simasc.integracion.enumeraciones.TipoFiltro;
+import com.ccb.simasc.integracion.manejadores.ManejadorCaso;
+import com.ccb.simasc.integracion.manejadores.ManejadorCorreoElectronico;
+import com.ccb.simasc.integracion.manejadores.ManejadorDominio;
+import com.ccb.simasc.integracion.manejadores.ManejadorEventoRolPersonaCaso;
+import com.ccb.simasc.integracion.manejadores.ManejadorMateria;
+import com.ccb.simasc.integracion.manejadores.ManejadorPersona;
+import com.ccb.simasc.integracion.manejadores.ManejadorPersonaServicioMateria;
+import com.ccb.simasc.integracion.manejadores.ManejadorRequisitoLista;
+import com.ccb.simasc.integracion.manejadores.ManejadorRequisitoPersona;
+import com.ccb.simasc.integracion.manejadores.ManejadorRolPersonaCaso;
+import com.ccb.simasc.integracion.manejadores.ManejadorServicio;
+import com.ccb.simasc.integracion.manejadores.ManejadorSorteo;
+import com.ccb.simasc.integracion.manejadores.ManejadorTelefono;
+import com.ccb.simasc.integracion.manejadores.utilidades.InformacionFiltro;
+import com.ccb.simasc.negocio.transversal.FachadaDominios;
+import com.ccb.simasc.transversal.dto.ArbitroDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteArbitrosDispSorteoDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteAspirantesDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteAudienciaDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteAudienciasProgramacionRefrigeriosDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteAuxiliarPromedioTranscripcionDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteCasoCuantiaDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteCasoParteDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteCasoSecretarioDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteCasosAceptadosRechazadosSecretarioDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteCasosCerradosDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteCasosPendientesSorteoPublicoDesignacionDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteCasosPorArbitroDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteCasosSorteadosDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteCasosSuspendidosDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteDeArbitroDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteDigitalizacionDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteEstadosArbitroCasosArbitroDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteEstadosArbitroHistoricoEstadoDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteEstadosArbitroMateriaDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteEstadosArbitroRolDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteGeneralArbitrajeDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteIngresosDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteRepartoPorAbogadoDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteSalasOcupadasDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteSecretariosDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteTranscripcionesDTO;
+import com.ccb.simasc.transversal.entidades.Agendamiento;
+import com.ccb.simasc.transversal.entidades.Audiencia;
+import com.ccb.simasc.transversal.entidades.Caso;
+import com.ccb.simasc.transversal.entidades.CorreoElectronico;
+import com.ccb.simasc.transversal.entidades.Dominio;
+import com.ccb.simasc.transversal.entidades.DominioPK;
+import com.ccb.simasc.transversal.entidades.Persona;
+import com.ccb.simasc.transversal.entidades.RolPersonaCaso;
+import com.ccb.simasc.transversal.entidades.Sede;
+import com.ccb.simasc.transversal.entidades.Sorteo;
+import com.ccb.simasc.transversal.entidades.Telefono;
+import com.ccb.simasc.transversal.excepciones.SimascException;
+import com.ccb.simasc.transversal.utilidades.UtilConstantes;
+import com.ccb.simasc.transversal.utilidades.UtilDominios;
+import com.ccb.simasc.transversal.utilidades.UtilOperaciones;
+import com.ccb.simasc.transversal.utilidades.UtilSimasc;
+
+
+/**
+ * Fachada encargada de implementar los metodos de consulta de los reportes
+ * @author aalvarez
+ *
+ */
+@Stateless
+@LocalBean
+public class ReporteFacade {
+
+	private static final String EXCEPCION_ARBITRO_CONSULTADO_NULO = "El Arbitro seleccionado no existe en la base de datos.";
+	private static final String EXCEPCION_CALCULO_DIAS_HABILES = "Ocurrió un error calculando el promedio diario de minutos transcritos.";
+
+	private static final Logger LOGGER = Logger.getLogger(ReporteFacade.class.getName());
+	
+	
+	@Context
+	private HttpHeaders httpHeaders;
+	
+	@EJB
+	private ManejadorTelefono manejadorTelefono; 
+
+	@EJB 
+	private ManejadorDominio manejadorDominio;
+
+	@PersistenceContext
+	private EntityManager em;
+
+	@EJB
+	private FachadaDominios fachadaDominios;
+	
+	@EJB
+	private RequisitoFacade requisitoFacade;
+	
+	@EJB
+	private FechaCasoFacade fechaCasoFacade;
+	
+	@EJB
+	private ManejadorPersona manejadorPersona;
+	
+	@EJB 
+	private ManejadorCaso manejadorCaso;
+	
+	@EJB 
+	private ManejadorSorteo manejadorSorteo;
+	
+	@EJB
+	private GeneradorDTOs generadorDTOs;
+	
+	@EJB
+	private ManejadorRolPersonaCaso manejadorRolPersonaCaso;
+	
+	@EJB
+	private ManejadorPersonaServicioMateria manejadorPersonaServicioMateria; 
+
+	@EJB
+	private ManejadorRequisitoPersona manejadorRequisitoPersona; 
+
+	@EJB
+	private ManejadorRequisitoLista manejadorRequisitoLista; 
+	
+	@EJB
+	private ManejadorEventoRolPersonaCaso manejadorEventoRolPersonaCaso;
+	
+	@EJB
+	private ManejadorCorreoElectronico manejadorCorreo;
+	
+	@EJB
+	private ManejadorMateria manejadorMateria;
+	
+	@EJB
+	private ManejadorServicio manejadorServicio;
+	
+	@EJB
+	private IDominioFacade dominioFacade;
+	
+	/**
+	 * Reporte que permite visualizar los datos generales de cada caso
+	 * @param filtros	Filtros del reporte
+	 * @param fechaIni	Limite inferior de Fecha, corresponde a la fecha de radicación del caso
+	 * @param fechaIni	Limite Superior de Fecha, corresponde a la fecha de radicación del caso
+	 * @return List<ReporteGeneralArbitrajeDTO>
+	 */
+	public List<ReporteGeneralArbitrajeDTO> getReporteGeneralArbitraje(
+			Map<String,Object> filtros, Date fechaIni, Date fechaFin) {
+		
+		Long idMateriaLong = null; 
+		Long idTipoLong = null;
+		String etapa = null;
+		String cuantia = null;		
+		Long auxAdmin = null;
+		Long abogado = null;
+		Long sede = null;
+		String casoActInactivo = null;
+		String tipoSede = null;
+		if (filtros.get("km")!=null)
+			idMateriaLong = new Long(filtros.get("km").toString());
+		if (filtros.get("kti")!=null)
+			idTipoLong = new Long(filtros.get("kti").toString());
+		if (filtros.get("ke")!=null)
+			etapa = filtros.get("ke").toString();
+		if (filtros.get("kcu")!=null)
+			cuantia = filtros.get("kcu").toString();
+		if (filtros.get("kc")!=null)
+			casoActInactivo = filtros.get("kc").toString();
+		if (filtros.get("kax") != null) 
+			auxAdmin = new Long(filtros.get("kax").toString());
+		if (filtros.get("ka") != null) 
+			abogado = new Long(filtros.get("ka").toString());
+		if (filtros.get("kse") != null) 
+			sede = new Long(filtros.get("kse").toString());		
+		if (filtros.get("kr") != null) 
+			tipoSede = filtros.get("kr").toString();
+		
+		
+		DateFormat dateFormat = new SimpleDateFormat(UtilConstantes.FORMATO_FECHA_ANIO_MES_DIA);
+		String fechaInicio = dateFormat.format(fechaIni);
+		String fechaFinal = dateFormat.format(fechaFin);
+		
+		String queryConvocante = "(select stuff((select ' - ' + "
+				+ "concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', "
+				+ "pe.segundo_apellido) "
+				+ "from ROL_PERSONA_CASO rpc inner join PERSONA pe on rpc.id_persona=pe.id_persona  "
+				+ "where rpc.id_caso=ca.id_caso and rpc.estado_registro=?1 "
+				+ "and rpc.id_rol in (select id_rol from rol where nombre='DTE') "
+				+ "for xml path('')), 1, 1, '')) as convocante, ";
+		
+		String apoderadoConvocante = "(select stuff((select ' - ' "
+				+ "+ concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', "
+				+ "pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+ "from ROL_PERSONA_CASO rpc inner join PERSONA pe on rpc.id_persona=pe.id_persona  "
+				+ "where rpc.id_caso=ca.id_caso and rpc.estado_registro=?1 "
+				+ "and rpc.id_rol in (select id_rol from rol where nombre=?5) "
+				+ "for xml path('')), 1, 1, '')) as apoderadoConvocante, ";
+		
+		String convocado = "(select stuff((select ' - ' + concat (pe.primer_nombre_o_razon_social, ' ', "
+				+ "pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+ "from ROL_PERSONA_CASO rpc inner join PERSONA pe on rpc.id_persona=pe.id_persona  "
+				+ "where rpc.id_caso=ca.id_caso and rpc.estado_registro=?1 and "
+				+ "rpc.id_rol in (select id_rol from rol where nombre=?6) "
+				+ "for xml path('')), 1, 1, '')) as convocado, ";
+		
+		String apoderadoConvocado = "(select stuff((select ' - ' "
+				+ "+ concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', "
+				+ "pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+ "from ROL_PERSONA_CASO rpc inner join PERSONA pe on rpc.id_persona=pe.id_persona  "
+				+ "where rpc.id_caso=ca.id_caso and rpc.estado_registro=?1 "
+				+ "and rpc.id_rol in (select id_rol from rol where nombre=?7) "
+				+ "for xml path('')), 1, 1, '')) as apoderadoConvocado, ";
+		
+		String procurador = "(select stuff((select ' - ' + concat (pe.primer_nombre_o_razon_social, ' ', "
+				+ "pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+ "from ROL_PERSONA_CASO rpc inner join PERSONA pe on rpc.id_persona=pe.id_persona  "
+				+ "where rpc.id_caso=ca.id_caso and rpc.estado_registro=?1 "
+				+ "and rpc.id_rol in (select id_rol from rol where nombre=?8) "
+				+ "for xml path('')), 1, 1, '')) as procurador, ";
+		
+		String nombreAbogado = "(select stuff((select ' - ' + concat (pe.primer_nombre_o_razon_social, ' ', "
+				+ "pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+ "from ROL_PERSONA_CASO rpc inner join PERSONA pe on rpc.id_persona=pe.id_persona  "
+				+ "where rpc.id_caso=ca.id_caso and rpc.estado_registro=?1 "
+				+ "and rpc.id_rol in (select id_rol from rol where nombre=?2) "
+				+ "for xml path('')), 1, 1, '')) as nombreAbogado, ";
+		
+		String auxiliarAdministrativo = "(select stuff((select ' - ' "
+				+ "+ concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', "
+				+ "pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+ "from ROL_PERSONA_CASO rpc inner join PERSONA pe on rpc.id_persona=pe.id_persona  "
+				+ "where rpc.id_caso=ca.id_caso and rpc.estado_registro=?1 "
+				+ "and rpc.id_rol in (select id_rol from rol where nombre=?3) "
+				+ "for xml path('')), 1, 1, '')) as auxiliarAdministrativo, ";
+		
+		String arbitrosLista = "(select stuff((select ',  ' + concat (pe.primer_nombre_o_razon_social, ' ', "
+				+ "pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+ "from ROL_PERSONA_CASO rpc inner join PERSONA pe on rpc.id_persona=pe.id_persona  "
+				+ "where rpc.id_caso=ca.id_caso and rpc.estado_registro=?1 and rpc.estado in ('ACE') "
+				+ "and rpc.id_rol in (select DISTINCT rl.id_rol "
+				+ "from PARAMETRO_SERVICIO_SORTEO pss inner join ROL rl on pss.id_rol = rl.id_rol) "
+				+ "for xml path('')), 1, 1, '')) as arbitrosLista, ";
+		
+		String secretario = "(select stuff((select ' - ' + concat (pe.primer_nombre_o_razon_social, ' ', "
+				+ "pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+ "from ROL_PERSONA_CASO rpc inner join PERSONA pe on rpc.id_persona=pe.id_persona  "
+				+ "where rpc.id_caso=ca.id_caso and rpc.estado_registro=?1 "
+				+ "and rpc.id_rol in (select id_rol from rol where nombre='SEC') "
+				+ "for xml path('')), 1, 1, '')) as secretario, ";
+		
+		StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append("select distinct ");
+		jpqlQuery.append("(select nombre from dominio where codigo=ca.etapa and dominio='" + UtilDominios.DOMINIO_ETAPA_CASO + "') as etapaTramite, ");		
+		jpqlQuery.append("ca.id_caso as codigoCaso, ");
+		jpqlQuery.append("ca.nombre as nombreCaso, ");
+		jpqlQuery.append("(select nombre from servicio where id_servicio=ca.id_servicio) as tipoCaso, ");
+		jpqlQuery.append("CAST(ca.fecha_radicacion AS DATE) as fechaRadicacion, ");
+		jpqlQuery.append("(select nombre from dominio where codigo=ca.tipo_pacto and dominio='" + UtilDominios.DOMINIO_TIPO_PACTO + "') as tipoPacto, ");
+		jpqlQuery.append("ca.tipo_cuantia as tipoCuantia, ");
+		jpqlQuery.append("ca.valor_pretensiones as valorPretensiones, ");
+		jpqlQuery.append("(select nombre from materia where id_materia=ca.id_materia) as materia, ");
+		jpqlQuery.append("ca.tipo_tramite as tipoTramite, ");
+		jpqlQuery.append(queryConvocante);
+		jpqlQuery.append(apoderadoConvocante);
+		jpqlQuery.append(convocado);
+		jpqlQuery.append(apoderadoConvocado);
+		jpqlQuery.append(procurador);
+		jpqlQuery.append(nombreAbogado);
+		jpqlQuery.append(auxiliarAdministrativo);
+		jpqlQuery.append(arbitrosLista);
+		jpqlQuery.append(secretario);
+		jpqlQuery.append("se.nombre as sede, ");
+		jpqlQuery.append("se.tipo_sede as radicacionVirtual, ");
+		jpqlQuery.append("(select CAST(MIN(hora_inicio) AS DATE) as fecha from audiencia where id_caso=ca.id_caso and estado_registro=?1) as fechaPrimeraAudiencia, ");
+		jpqlQuery.append("(select CAST(MIN(hora_inicio) AS DATE) as fecha from audiencia where id_caso=ca.id_caso and estado=?4 and estado_registro=?1 and tipo_audiencia='INI') as fechaInstalacion, ");
+		jpqlQuery.append("(select case when ca.estado_caso in (select codigo from dominio where dominio_padre='" + UtilDominios.DOMINIO_ESTADO_CASO_PADRE + "' and codigo_dom_padre='" + UtilDominios.ESTADO_PADRE_CASO_INACTIVO + "') THEN 'SI' ELSE 'NO' END) as casoInactivo, ");
+		jpqlQuery.append("d.nombre as motivoCierre, ");
+		jpqlQuery.append("(SELECT dbo.diasHabilesEntreDosFechas(ca.fecha_radicacion, (select MIN(hora_inicio) as fecha from audiencia where id_caso=ca.id_caso and estado=?4 and estado_registro=?1 and tipo_audiencia='INI'))) as numeroDiasInstalacion, ");
+		jpqlQuery.append("(SELECT dbo.diasHabilesEntreDosFechas(ca.fecha_radicacion, (select MIN(hora_inicio) as fecha from audiencia where id_caso=ca.id_caso and estado=?4 and estado_registro=?1))) as numeroDiasAtencion ");
+		jpqlQuery.append("from CASO ca ");
+		jpqlQuery.append("LEFT join DOMINIO d on d.codigo = ca.motivo_cierre ");
+		jpqlQuery.append("inner join SEDE se on ca.id_sede=se.id_sede ");
+		jpqlQuery.append("inner join ROL_PERSONA_CASO rpc on ca.id_caso = rpc.id_caso ");
+		jpqlQuery.append("inner join PERSONA p on rpc.id_persona = p.id_persona ");
+		jpqlQuery.append("where ca.fecha_radicacion between '" + fechaInicio + "' and '" + fechaFinal + "' ");
+		jpqlQuery.append("and ca.estado_registro=?1 ");
+		
+		if (sede != null)
+			jpqlQuery.append("and ca.id_sede=" + sede +" ");
+		if (idTipoLong != null)
+			jpqlQuery.append("and ca.id_servicio=" + idTipoLong + " ");
+		if (cuantia != null)
+			jpqlQuery.append("and ca.tipo_cuantia='" + cuantia + "' ");
+		if (casoActInactivo != null) 
+			jpqlQuery.append("and ca.estado_caso in (select codigo from dominio where dominio_padre='" + UtilDominios.DOMINIO_ESTADO_CASO_PADRE + "' and codigo_dom_padre='" + casoActInactivo + "') ");
+		if (abogado != null)
+			jpqlQuery.append("and (rpc.estado_registro=?1 and rpc.id_rol in (select id_rol from rol where nombre=?2) and p.id_persona= " + abogado + ") ");
+		if (tipoSede != null)
+			jpqlQuery.append("and se.tipo_sede = '" + tipoSede + "' ");
+		if (auxAdmin != null)
+			jpqlQuery.append("and (rpc.estado_registro=?1 and rpc.id_rol in (select id_rol from rol where nombre=?3) and p.id_persona=" + auxAdmin + ") ");
+		if(idMateriaLong != null) 
+			jpqlQuery.append("and ca.id_materia= " + idMateriaLong +" ");
+		if (etapa != null)
+			jpqlQuery.append("and ca.etapa='" + etapa + "' ");
+		
+		jpqlQuery.append(" ORDER BY ca.id_caso asc");		
+		
+		Query q = em.createNativeQuery(jpqlQuery.toString(), ReporteGeneralArbitrajeDTO.class);
+		q.setParameter(1, UtilDominios.ESTADO_REGISTRO_ACTIVO);
+		q.setParameter(2, UtilDominios.ROL_PERSONA_ABOGADO);
+		q.setParameter(3, UtilDominios.ROL_PERSONA_AUXILIAR_ADM);
+		q.setParameter(4, UtilDominios.ESTADO_AUDIENCIA_REALIZADA);				
+		q.setParameter(5, UtilDominios.ROL_PERSONA_APODERADO_DEMANDANTE);
+		q.setParameter(6, UtilDominios.ROL_PERSONA_PARTE_DEMANDADA);
+		q.setParameter(7, UtilDominios.ROL_PERSONA_APODERADO_DEMANDADO);
+		q.setParameter(8, UtilDominios.ROL_PERSONA_PROCURADOR_JUDICIAL);
+				
+		return 	q.getResultList();
+	}
+
+	/**
+	 * Metodo encargado de generar el reporte del estado de digitalización 
+	 * de los documentos
+	 * @param filtros	Filtros del reporte
+	 * @return List<ReporteDigitalizacionDTO>
+	 */	
+	@SuppressWarnings("unchecked")
+	public List<ReporteDigitalizacionDTO> getReporteDigitalizacion(Map filtros){
+
+		List<ReporteDigitalizacionDTO> reporteDigitalizacionDTOs= new ArrayList<ReporteDigitalizacionDTO>();
+		DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+    	String fechaIncial= (String) filtros.get("fechaInicial");
+    	String fechaFinal= (String) filtros.get("fechaFinal");   	
+    	String idPersona= (String) filtros.get("idPersona");
+		String estado = (String) filtros.get("estado");
+		String idCaso = (String) filtros.get("idCaso");
+		String idDocumento = (String) filtros.get("codigo");
+ 		StringBuilder nativeQuery = new StringBuilder();
+ 		nativeQuery.append("SELECT doc.id_caso, c.nombre, doc.fecha_asignacion, doc.fecha_digitalizacion, dom.nombre, do.nombre, doc.observaciones, doc.numero_folios, ");
+ 		nativeQuery.append("(SELECT STUFF((SELECT ' '+concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ',pe.segundo_apellido) FROM PERSONA pe WHERE pe.id_persona = doc.id_digitalizador for xml path('')),1,1,' ')) AS Digitalizador ");
+ 		nativeQuery.append("FROM DOCUMENTO doc ");
+ 		nativeQuery.append("LEFT JOIN CASO c ON doc.id_caso = c.id_caso ");
+ 		nativeQuery.append("LEFT JOIN DOMINIO dom ON dom.codigo = doc.estado_digitalizacion  ");
+ 		nativeQuery.append("LEFT JOIN DOMINIO do ON do.codigo = doc.tipo_documento ");
+ 		nativeQuery.append("WHERE doc.fecha_asignacion BETWEEN ?1 AND ?2 ");
+ 		if((idPersona!=null && !idPersona.equals(""))) nativeQuery.append("AND doc.id_digitalizador = ?3 ");
+ 		if((idCaso!=null && !idCaso.equals(""))) nativeQuery.append("AND doc.id_caso = ?4 ");
+ 		if((estado!=null && !estado.equals(""))) nativeQuery.append("AND doc.estado_digitalizacion = ?5 ");
+ 		if((idDocumento!=null && !idDocumento.equals(""))) nativeQuery.append("AND doc.tipo_documento = ?6 ");
+ 		nativeQuery.append("ORDER BY doc.fecha_asignacion ASC ");
+ 		
+ 		Query query = em.createNativeQuery(nativeQuery.toString());
+ 		query.setParameter(1, fechaIncial);
+ 		query.setParameter(2, fechaFinal);
+ 		if((idPersona!=null && !idPersona.equals(""))){
+ 			query.setParameter(3, idPersona);
+ 		}
+ 		if((idCaso!=null && !idCaso.equals(""))){
+ 			query.setParameter(4, idCaso);		
+ 		}		
+ 		if((estado!=null && !estado.equals(""))){
+ 			query.setParameter(5, estado);		
+ 		}		
+ 		if((idDocumento!=null && !idDocumento.equals(""))){
+ 			query.setParameter(6, idDocumento);		
+ 		}		
+ 		List<Object[]> resultado = query.getResultList();		
+ 		for (Object[] row : resultado) {
+ 			ReporteDigitalizacionDTO reporte= new ReporteDigitalizacionDTO();
+ 			reporte.setCodigoCaso((Long) ((BigDecimal)row[0]).longValue());
+ 			reporte.setDescripcionDocumento(row[6]==null?"":(String) row[6]);
+ 			reporte.setEstadoDigitalizacion(row[4]==null?"":(String) row[4]);
+ 			String reportDate1 = row[2]==null?"":df.format(row[2]);
+ 			String reportDate2 = row[3]==null?"":df.format(row[3]);
+ 			reporte.setFechaAsignacion(reportDate1);
+ 			reporte.setFechaDigitalizacion(reportDate2);
+ 			reporte.setNombreCaso(row[1]==null?"":(String) row[1]);
+ 			String nombreFuncionario= "";
+ 			nombreFuncionario= row[8]==null?"":(String) row[8];
+ 			reporte.setNombreFuncionario(nombreFuncionario);
+ 			reporte.setNumeroFolios(row[7]==null?0:(Long) ((BigDecimal)row[7]).longValue());
+ 			reporteDigitalizacionDTOs.add(reporte);
+ 		}
+ 				
+ 				
+
+		return reporteDigitalizacionDTOs;
+	}
+
+
+
+	/**
+	 * Metodo encargado de generar el reporte de los secretarios 
+	 * que aceptaron o rechazaron un caso 
+	 * @param Map filtros
+	 * @return List<ReporteCasosAceptadosRechazadosSecretarioDTO>
+	 * @throws ParseException 
+	 */	
+	@SuppressWarnings("unchecked")
+	public List<ReporteCasosAceptadosRechazadosSecretarioDTO> getReporteCasosAceptadosRechazadosSecretario(Map filtros) {
+
+		List<ReporteCasosAceptadosRechazadosSecretarioDTO> reporteCasosAceptadosRechazadosSecretarioDTOs = new ArrayList<ReporteCasosAceptadosRechazadosSecretarioDTO>();
+		Date fechaIncial = (Date) filtros.get("fechaInicial");
+		Date fechaFinal = (Date) filtros.get("fechaFinal");
+		String idPersona = (String) filtros.get("idPersona");
+		String fechaInicio = UtilOperaciones.formatearFechaFormato(fechaIncial,
+				UtilConstantes.FORMATO_FECHA_ANIO_MES_DIA);
+		String fechaFin = UtilOperaciones.formatearFechaFormato(fechaFinal, UtilConstantes.FORMATO_FECHA_ANIO_MES_DIA);
+		
+		StringBuilder nativeQuery = new StringBuilder();
+		nativeQuery.append("SELECT ");
+		nativeQuery.append("  c.id_Caso, "); // 0
+		nativeQuery.append("  c.nombre AS caso, "); // 1
+		nativeQuery.append("  c.fecha_Radicacion, "); // 2
+		nativeQuery.append("  s.nombre AS servicio, "); // 3
+		nativeQuery.append("  (SELECT ");
+		nativeQuery.append("    d.nombre ");
+		nativeQuery.append("  FROM DOMINIO d ");
+		nativeQuery.append("  WHERE d.codigo = c.tipo_cuantia ");
+		nativeQuery.append("  AND d.dominio = '" + UtilDominios.DOMINIO_TIPO_CUANTIA + "') ");
+		nativeQuery.append("  AS tipo_cuantia, "); // 4
+		nativeQuery.append("  m.nombre AS materia, "); // 5
+		nativeQuery.append(
+				"  CONCAT(p.primer_nombre_o_razon_social, ' ', p.segundo_nombre, ' ', p.primer_apellido, ' ', p.segundo_apellido) AS secretario, "); // 6
+		nativeQuery.append("  (SELECT ");
+		nativeQuery.append("    d.nombre ");
+		nativeQuery.append("  FROM DOMINIO d ");
+		nativeQuery.append("  WHERE d.codigo = rpc.estado ");
+		nativeQuery.append("  AND d.dominio = '" + UtilDominios.DOMINIO_ESTADO_ROL_PERSONA_CASO + "') ");
+		nativeQuery.append("  AS pronunciamiento, "); // 7
+		nativeQuery.append("  (SELECT ");
+		nativeQuery.append("    STUFF((SELECT ");
+		nativeQuery.append(
+				"      ', ' + concat(pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) ");
+		nativeQuery.append("    FROM ROL_PERSONA_CASO rp ");
+		nativeQuery.append("    LEFT JOIN PERSONA pe ");
+		nativeQuery.append("      ON rp.id_persona = pe.id_persona ");
+		nativeQuery.append("    WHERE rp.id_caso = c.id_caso ");
+		nativeQuery.append("    AND rp.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		nativeQuery.append("    AND rp.estado IN ('" + UtilDominios.ESTADO_ROL_PERSONA_CASO_POR_ACEPTAR + "','"
+				+ UtilDominios.ESTADO_ROL_PERSONA_CASO_ACEPTADO + "') ");
+		nativeQuery.append("    AND rp.id_rol IN (SELECT DISTINCT ");
+		nativeQuery.append("      rl.id_rol ");
+		nativeQuery.append("    FROM PARAMETRO_SERVICIO_SORTEO pss ");
+		nativeQuery.append("    INNER JOIN ROL rl ");
+		nativeQuery.append("      ON pss.id_rol = rl.id_rol) ");
+		nativeQuery.append("    FOR xml PATH ('')), 1, 1, '')) ");
+		nativeQuery.append("  AS arbitros, "); // 8
+		nativeQuery.append("  erpc_not.fecha_de_asignacion AS fecha_notificacion, "); // 9
+		nativeQuery.append("  erpc_ace.fecha_de_asignacion AS fecha_aceptacion "); // 10
+		nativeQuery.append("FROM ROL_PERSONA_CASO rpc ");
+		nativeQuery.append("     LEFT JOIN EVENTO_ROL_PERSONA_CASO erpc_not ");
+		nativeQuery.append("       ON rpc.id_rol = erpc_not.id_rol ");
+		nativeQuery.append("       AND rpc.id_persona = erpc_not.id_persona ");
+		nativeQuery.append("       AND rpc.id_caso = erpc_not.id_caso ");
+		nativeQuery.append(
+				"       AND erpc_not.estado_asignado = '" + UtilDominios.ESTADO_ROL_PERSONA_CASO_POR_ACEPTAR + "' ");
+		nativeQuery.append("     LEFT JOIN EVENTO_ROL_PERSONA_CASO erpc_ace ");
+		nativeQuery.append("       ON rpc.id_rol = erpc_ace.id_rol ");
+		nativeQuery.append("       AND rpc.id_persona = erpc_ace.id_persona ");
+		nativeQuery.append("       AND rpc.id_caso = erpc_ace.id_caso ");
+		nativeQuery.append(
+				"       AND erpc_ace.estado_asignado = '" + UtilDominios.ESTADO_ROL_PERSONA_CASO_ACEPTADO + "', ");
+		nativeQuery.append("     ROL r, ");
+		nativeQuery.append("     CASO c, ");
+		nativeQuery.append("     MATERIA m, ");
+		nativeQuery.append("     SERVICIO s, ");
+		nativeQuery.append("     PERSONA p ");
+		nativeQuery.append("WHERE rpc.id_rol = r.id_rol ");
+		nativeQuery.append("AND rpc.id_caso = c.id_caso ");
+		nativeQuery.append("AND c.id_materia = m.id_materia ");
+		nativeQuery.append("AND c.id_servicio = s.id_servicio ");
+		nativeQuery.append("AND rpc.id_persona = p.id_persona ");
+		nativeQuery.append("AND r.nombre = '" + UtilDominios.ROL_PERSONA_SECRETARIO_DE_TRIBUNAL + "' ");
+		nativeQuery.append("AND CAST(c.fecha_Radicacion AS date) BETWEEN ?1 AND ?2 ");
+		
+		if (null != idPersona) {
+			nativeQuery.append("AND p.id_persona = ?3 ");
+		}
+		
+		nativeQuery.append("ORDER BY c.id_caso ASC ");
+		
+		Query query = em.createNativeQuery(nativeQuery.toString());
+		query.setParameter(1, fechaInicio);
+		query.setParameter(2, fechaFin);
+		
+		if (null != idPersona) {
+			query.setParameter(3, new Long(idPersona));
+		}
+		
+		List<Object[]> resultado = query.getResultList();
+		
+		for (Object[] objects : resultado) {
+			ReporteCasosAceptadosRechazadosSecretarioDTO dto = new ReporteCasosAceptadosRechazadosSecretarioDTO();
+			dto.setCodigoCaso(((BigDecimal) objects[0]).longValue());
+			dto.setNombreCaso(objects[1] != null ? (String) objects[1] : UtilConstantes.CADENA_VACIA);
+			dto.setFechaRadicacionCaso(
+					UtilOperaciones.formatearFechaFormato((Date) objects[2], UtilConstantes.FORMATO_FECHA_ANIO_MES_DIA));
+			dto.setTipoCaso(objects[3] != null ? (String) objects[3] : UtilConstantes.CADENA_VACIA);
+			dto.setTipoCuantia(objects[4] != null ? (String) objects[4] : UtilConstantes.CADENA_VACIA);
+			dto.setMateria(objects[5] != null ? (String) objects[5] : UtilConstantes.CADENA_VACIA);
+			dto.setNombreSecretario(objects[6] != null ? (String) objects[6] : UtilConstantes.CADENA_VACIA);
+			dto.setPronunciamiento(objects[7] != null ? (String) objects[7] : UtilConstantes.CADENA_VACIA);
+			dto.setArbitrosLista(objects[8] != null ? (String) objects[8] : UtilConstantes.CADENA_VACIA);
+			dto.setFechaNotificacionNombramiento(objects[9] != null ? UtilOperaciones.formatearFechaFormato(
+					(Date) objects[9], UtilConstantes.FORMATO_FECHA_ANIO_MES_DIA_HORA) : UtilConstantes.CADENA_VACIA);
+			dto.setFechaAceptacionEncargo(objects[10] != null ? UtilOperaciones.formatearFechaFormato(
+					(Date) objects[10], UtilConstantes.FORMATO_FECHA_ANIO_MES_DIA_HORA) : UtilConstantes.CADENA_VACIA);
+			reporteCasosAceptadosRechazadosSecretarioDTOs.add(dto);
+		}
+ 		
+ 		return reporteCasosAceptadosRechazadosSecretarioDTOs;
+
+	}
+	
+	/**
+	 * Metodo encargado de generar el reporte de los casos 
+	 * que se han suspendido 
+	 * @param filtros
+	 * @return List<ReporteCasosSuspendidosDTO>
+	 */	
+	@SuppressWarnings("unchecked")
+	public List<ReporteCasosSuspendidosDTO> getReporteCasosSuspendidos(Map filtros){
+		DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+    	String fechaIncial= (String) filtros.get("fechaInicial");
+    	String fechaFinal= (String) filtros.get("fechaFinal");   	
+ 		List<Object[]> rows=new ArrayList<>();
+ 		List<ReporteCasosSuspendidosDTO> casosSuspendidos=new ArrayList<ReporteCasosSuspendidosDTO>(rows.size());
+		StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append("select  "	//
+				+ "c.idCaso, "					//0
+				+ "c.nombre, "					//1
+				+ "s.fechaInicial, "			//2
+				+ "s.fechaFinal,"				//3
+				+ "s.motivo "			);		//4
+		jpqlQuery.append("from Suspension s LEFT JOIN ");
+		jpqlQuery.append(" s.caso c ");
+ 		jpqlQuery.append("where ((s.fechaInicial BETWEEN '"+fechaIncial+"' AND '"+fechaFinal+"') OR (s.fechaFinal BETWEEN '"+fechaIncial+"' AND '"+fechaFinal+"')) ");
+ 		jpqlQuery.append(" AND s.tipo IN :tipoSus ");
+ 		jpqlQuery.append("ORDER BY c.idCaso ASC ");
+ 		Query query = em.createQuery(jpqlQuery.toString()); 		
+
+ 		query.setParameter("tipoSus", Arrays.asList(UtilDominios.TIPO_SUSPENSION_SUSPENSION_ARBITRAL,UtilDominios.TIPO_SUSPENSION_SUSPENSION_PREARBITRAL));
+ 		rows=query.getResultList();
+
+ 		for (Object[] row : rows) {
+ 			ReporteCasosSuspendidosDTO reporte= new ReporteCasosSuspendidosDTO();
+ 			reporte.setCodigoCaso((Long) row[0]);
+ 			reporte.setNombreCaso((String) row[1]);
+ 			String reportDate = row[2]==null?"":df.format(row[2]);
+ 			String reportDate2 = row[3]==null?"":df.format(row[3]);
+ 			String periodoSuspencion=reportDate+" a "+reportDate2; 
+ 			reporte.setPeriodoSuspension(periodoSuspencion);
+ 			List<RolPersonaCaso> secretarios = manejadorRolPersonaCaso.consultarPersonasAsignadasCasoPorRol(Long.valueOf(row[0].toString()),UtilDominios.ROL_PERSONA_SECRETARIO_DE_TRIBUNAL);
+ 			if(!secretarios.isEmpty()){
+ 				reporte.setSecretario(secretarios.get(0).getPersona().getNombreCompleto());
+ 				List<String> tipos = new ArrayList<>();
+ 				tipos.add(UtilDominios.TIPO_TELEFONO_CELULAR);
+ 				List<Telefono> tel = manejadorTelefono.consultarPorTipoYPersona(tipos,secretarios.get(0).getPersona().getIdPersona());
+ 				reporte.setTelefono(tel.isEmpty() ? "" : tel.get(0).getNumero());
+ 				List<CorreoElectronico> correos = manejadorCorreo.consultaCorreosPersona(secretarios.get(0).getPersona().getIdPersona());
+ 				reporte.setEmail(correos.isEmpty()?"":correos.get(0).getDireccion());
+ 			} 			
+ 			
+ 			reporte.setMotivoSuspension(row[4]==null?"":(String)row[4]);
+ 			casosSuspendidos.add(reporte);
+ 		}
+ 		
+ 		return casosSuspendidos;
+ 	}
+
+	/**
+	 * Metodo encargado de generar el reporte de los secretarios
+	 * @param filtros
+	 * @return List<ReporteSecretariosDTO>
+	 */	
+    @SuppressWarnings("unchecked")
+    public List<ReporteSecretariosDTO> getReporteSecretarios(Map filtros){
+    	
+    	String idPersona= (String) filtros.get("idPersona");
+    	String estado= (String) filtros.get("estado");
+    	String estadoSecretario=null;
+ 		List<Object[]> rows=new ArrayList<>();
+ 		List<ReporteSecretariosDTO> secretarios=new ArrayList<ReporteSecretariosDTO>(rows.size());		
+ 		StringBuilder nativeQuery = new StringBuilder();
+ 		nativeQuery.append("SELECT DISTINCT CONCAT(p.primer_nombre_o_razon_social,' ', p.segundo_nombre,' ',p.primer_apellido,' ',p.segundo_apellido) AS nombre, ");
+ 		nativeQuery.append("(SELECT STUFF((SELECT numero+' ' FROM TELEFONO WHERE id_persona = p.id_persona for xml path('')),1,1,' ')) AS telefonos, ");
+ 		nativeQuery.append("(SELECT STUFF((SELECT ' '+ CONCAT(ubi.direccion,' ', ");
+ 		nativeQuery.append("(SELECT STUFF((SELECT ' '+zog.nombre FROM ZONA_GEOGRAFICA zog WHERE zog.id_zona_geografica = ubi.id_zona_geografica for xml path('')),1,1,''))) ");
+ 		nativeQuery.append(" FROM UBICACION ubi WHERE ubi.id_persona = p.id_persona for xml path('')),1,1,' ')) AS direcciones, ");
+ 		nativeQuery.append("(SELECT TOP 1 direccion FROM CORREO_ELECTRONICO cc ");
+ 		nativeQuery.append(" WHERE cc.id_persona = p.id_persona ");
+ 		nativeQuery.append(" ORDER BY case when tipo = ?1 then 1 ");
+ 		nativeQuery.append("               when tipo = ?2 then 2 ");
+ 		nativeQuery.append("               else 3 ");
+ 		nativeQuery.append("          end asc) AS correo, ");
+ 		nativeQuery.append("rp.estado_registro ");
+ 		nativeQuery.append("FROM PERSONA p ");
+ 		nativeQuery.append("LEFT JOIN ROL_PERSONA rp ON  p.id_persona = rp.id_persona ");
+ 		nativeQuery.append("LEFT JOIN  ROL r ON r.id_rol = rp.id_rol ");
+ 		nativeQuery.append("LEFT JOIN UBICACION u ON p.id_persona = u.id_persona ");
+ 		nativeQuery.append("LEFT JOIN ZONA_GEOGRAFICA zg ON zg.id_zona_geografica = u.id_zona_geografica ");
+ 		nativeQuery.append("LEFT JOIN TELEFONO t ON t.id_persona = p.id_persona ");
+ 		nativeQuery.append("LEFT JOIN CORREO_ELECTRONICO c ON c.id_persona = p.id_persona ");
+ 		nativeQuery.append("WHERE r.nombre = ?3 ");
+ 		if((idPersona!=null && !idPersona.equals(""))){
+ 			nativeQuery.append("AND p.id_persona = ?4 ");
+	 	 			
+		}
+		if(estado!=null && !estado.equals("")){
+			nativeQuery.append("AND rp.estado_registro = ?5 "); 	 			
+		}
+ 		nativeQuery.append("ORDER BY nombre ASC ");	
+ 		Query query = em.createNativeQuery(nativeQuery.toString());
+ 		query.setParameter(1, UtilDominios.TIPO_CORREO_ELECTRONICO_CORREO_PRINCIPAL);
+ 		query.setParameter(2, UtilDominios.TIPO_CORREO_ELECTRONICO_CORREO_SECUNDARIO);
+ 		query.setParameter(3, UtilDominios.ROL_PERSONA_SECRETARIO_DE_TRIBUNAL);
+ 		query.setParameter(4, idPersona);
+ 		query.setParameter(5, estado);
+ 		rows=query.getResultList(); 		
+ 		
+ 		for (Object[] row : rows) {
+
+ 			ReporteSecretariosDTO reporte= new ReporteSecretariosDTO();
+ 			String nombreSecretario= (String) row[0];
+ 			reporte.setNombreSecretario(nombreSecretario);
+ 			reporte.setDireccion((String) row[2]);
+ 			reporte.setTelefono((String)row[1]);
+ 			estadoSecretario=(String) row[4];
+ 			if(estadoSecretario.equals(UtilDominios.ESTADO_REGISTRO_ACTIVO)){
+ 	 			reporte.setEstado("ACTIVO"); 				
+ 			}else if (estadoSecretario.equals(UtilDominios.ESTADO_REGISTRO_INACTIVO)) {
+ 				reporte.setEstado("INACTIVO"); 				
+			}
+ 			reporte.setCorreoElectronico((String)row[3]);
+ 			secretarios.add(reporte);
+ 		}
+ 		
+ 		return secretarios;
+	}
+
+	/**
+	 * Retorna el correo principal si este exixte o uno correo secundario de lo
+	 * contrario
+	 * 
+	 * @param correos
+	 * @return
+	 */
+	private String correoPrincipal(List<CorreoElectronico> correos) {
+		String correo = " ";
+		for (int i = 0; i < correos.size(); i++) {
+			if (UtilDominios.TIPO_CORREO_ELECTRONICO_CORREO_PRINCIPAL.equals(correos.get(i).getTipo())) {
+				correo = correos.get(i).getDireccion();
+			}
+		}
+		if (correo.equals(" ") && correos.size() > 0)
+			correo = correos.get(0).getDireccion();
+
+		return correo;
+	}
+    
+    
+    /**
+	 * Metodo encargado de generar el reporte de las audiencias ordenadas por el Id del Caso
+	 * @param filtros
+	 * @return List<ReporteAudienciaDTO>
+	 */	
+
+    public List<ReporteAudienciaDTO> getDatosReporteAudiencia(Map filtros){	
+
+
+		String codigoCaso = nvl(filtros.get("codigoCaso"),"").toString();
+		String nombreCaso = nvl(filtros.get("nombreCaso"),"").toString();
+		Date fechaIni = filtros.get("fechaIni") == null?null:(Date)filtros.get("fechaIni");
+		Date fechaFin = filtros.get("fechaFin") == null?null:(Date)filtros.get("fechaFin");
+		String abogado = filtros.get("abogado").toString();
+		String secretario = filtros.get("secretario").toString();	
+		String arbitro = filtros.get("arbitro").toString();
+		String estado = nvl(filtros.get("estado"),"0").toString();
+		String tipoAudiencia = nvl(filtros.get("tipoAudiencia"),"0").toString();		
+		List<Object[]> rowsArb;
+		List<Object[]> rowsCaso;
+		StringBuilder jpqlQueryArb = new StringBuilder();
+		StringBuilder jpqlQueryCaso = new StringBuilder();
+		String listCasos="";
+
+		if(!arbitro.equals("0")){
+			jpqlQueryCaso.append(" SELECT c.idCaso, c.nombre ");
+			jpqlQueryCaso.append(" FROM Caso c");
+			jpqlQueryCaso.append(" LEFT JOIN c.rolPersonaCasoList rpcArb");
+			jpqlQueryCaso.append(" WHERE ");
+			jpqlQueryCaso.append(" rpcArb.persona.idPersona = "+arbitro+"  ");
+			jpqlQueryCaso.append(" ORDER BY c.idCaso ASC ");
+			
+			Query query1 = em.createQuery(jpqlQueryCaso.toString());			
+			rowsCaso = query1.getResultList();
+			Long dato=null;
+			for (Object[] caso : rowsCaso){
+				dato= (Long) caso[0];
+				listCasos=listCasos.concat(Long.toString(dato));
+				listCasos=listCasos.concat(",");				
+			}
+			listCasos= listCasos.substring(0, listCasos.length()-1);
+
+		}
+
+		jpqlQueryArb.append(" SELECT c.idCaso,");
+		jpqlQueryArb.append("  	  arb.primerNombreORazonSocial,");
+		jpqlQueryArb.append("  	  arb.segundoNombre,");
+		jpqlQueryArb.append("  	  arb.primerApellido,");		
+		jpqlQueryArb.append("  	  arb.segundoApellido");
+		jpqlQueryArb.append(" FROM Caso c");
+		jpqlQueryArb.append(" LEFT JOIN c.rolPersonaCasoList rpcArb");
+		jpqlQueryArb.append(" LEFT JOIN rpcArb.persona arb");
+		jpqlQueryArb.append(" LEFT JOIN rpcArb.rol rolArb");
+		jpqlQueryArb.append(" WHERE ");
+		jpqlQueryArb.append(" (rolArb.nombre = :nombreRolArb OR rolArb.nombre IS NULL) ");
+
+		if(!arbitro.equals("0")){
+			jpqlQueryArb.append("and c.idCaso IN (" + listCasos + ") ");
+
+		}
+
+		jpqlQueryArb.append(" ORDER BY c.idCaso ASC ");
+
+		Query query = em.createQuery(jpqlQueryArb.toString());
+		query.setParameter("nombreRolArb", com.ccb.simasc.transversal.utilidades.UtilDominios.ROL_PERSONA_ARBITRO);		
+		
+		rowsArb = query.getResultList();
+
+
+		StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append(" SELECT c.idCaso,");
+		jpqlQuery.append("  	  c.nombre,");
+		jpqlQuery.append("  	  c.fechaRadicacion,");
+		jpqlQuery.append("  	  a.tipoAudiencia,");
+		jpqlQuery.append("  	  a.horaInicio,");
+		jpqlQuery.append("  	  a.estado,");		
+		jpqlQuery.append("  	  a.observaciones ");
+		jpqlQuery.append(" FROM Audiencia a");
+		jpqlQuery.append(" LEFT JOIN a.caso c");
+
+		jpqlQuery.append(" WHERE ");	
+
+		
+		if(!codigoCaso.equals("") && !codigoCaso.equals("0")){
+			jpqlQuery.append(" c.idCaso = :idCaso AND");
+			
+		}
+		if(!nombreCaso.equals(""))
+			jpqlQuery.append(" LOWER(c.nombre) LIKE :nombreCaso AND");
+		
+
+		if(fechaIni != null && fechaFin != null)
+			jpqlQuery.append(" a.horaInicio BETWEEN :fechaInicial AND :fechaFinal AND");
+
+		if(!estado.equals("0"))
+			jpqlQuery.append(" a.estado = :estado AND");
+
+		if(!tipoAudiencia.equals("0"))
+			jpqlQuery.append(" a.tipoAudiencia = :tipoAudiencia AND");
+
+		jpqlQuery.delete(jpqlQuery.length()-4, jpqlQuery.length());
+		jpqlQuery.append(" ORDER BY a.horaInicio ASC ");
+
+
+		Query query2 = em.createQuery(jpqlQuery.toString());
+		
+		if(!codigoCaso.equals("") && !codigoCaso.equals("0"))
+			query2.setParameter(Caso.ENTIDAD_CASO_PK ,Long.valueOf(codigoCaso));
+
+		if(!nombreCaso.equals(""))
+			query2.setParameter("nombreCaso","%" + nombreCaso.toLowerCase() + "%");
+
+		if(fechaIni != null && fechaFin != null){
+			query2.setParameter("fechaInicial",new Date(fechaIni.getTime()),TemporalType.DATE);
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(fechaFin);
+			cal.add(Calendar.DATE, 1); 
+			query2.setParameter("fechaFinal",new Date(cal.getTime().getTime()),TemporalType.DATE);
+		}
+
+		if(!estado.equals("0"))
+			query2.setParameter(Audiencia.ENTIDAD_AUDIENCIA_ESTADO,estado );
+
+		if(!tipoAudiencia.equals("0"))
+			query2.setParameter(Audiencia.ENTIDAD_AUDIENCIA_TIPO_AUDIENCIA,tipoAudiencia );
+
+		List<Object[]> listObj = query2.getResultList();
+		List<ReporteAudienciaDTO> datosReporte = new ArrayList<>();
+		SimpleDateFormat formatofecha = new SimpleDateFormat("yyyy/M/dd");
+		for (Object[] campo : listObj) {
+			boolean equalSecretario=true;
+			boolean equalAbogado=true;
+			Persona secretarioc = manejadorRolPersonaCaso.consultarSecretarioDelCaso((Long)campo[0]) == null?null:manejadorRolPersonaCaso.consultarSecretarioDelCaso((Long)campo[0]).getPersona();
+			Persona abogadoc = manejadorRolPersonaCaso.consultarAbogadoDelCaso((Long)campo[0]) == null?null:manejadorRolPersonaCaso.consultarAbogadoDelCaso((Long)campo[0]).getPersona();
+			
+			if(!secretario.equals("0"))
+				if(secretarioc != null){
+					if(!secretarioc.getIdPersona().toString().equals(secretario))
+						equalSecretario = false;
+				}else{
+					equalSecretario = false;
+				} 
+					
+			
+			if(!abogado.equals("0"))
+				if(abogadoc != null){
+					if(!abogadoc.getIdPersona().toString().equals(abogado))
+						equalAbogado=false;
+				}else{
+					equalAbogado=false;
+				}
+					
+					
+			
+			if(equalSecretario && equalAbogado){
+					ReporteAudienciaDTO dto1 = new ReporteAudienciaDTO();
+					dto1.setCodigoCaso(campo[0].toString());
+					dto1.setNombreCaso(nvl(campo[1],"").toString());
+					dto1.setFechaRadicacionCaso(campo[2]==null?"":formatofecha.format((Date)campo[2]));
+					dto1.setTipoAudiencia((campo[3] == null?"":fachadaDominios.getNombreDominio(UtilDominios.DOMINIO_TIPO_AUDIENCIA,campo[3].toString())));
+					dto1.setFechaAudiencia(campo[4]==null?"":UtilOperaciones.formatearFechaHora((Date)campo[4]));
+					dto1.setNombreSecretario(manejadorRolPersonaCaso.consultarSecretarioDelCaso((Long)campo[0]) == null?null:manejadorRolPersonaCaso.consultarSecretarioDelCaso((Long)campo[0]).getPersona().getNombreCompleto());
+					
+					String arbitros="";
+					String arbitroSTR="";
+					for (Object[] rowA : rowsArb) {
+						if(campo[0].equals(rowA[0])){
+							if (rowA[1] != null) {
+								arbitroSTR = (String) rowA[1] + " ";
+							}
+							if (rowA[2] != null) {
+								arbitroSTR = arbitroSTR.concat((String) rowA[2] + " ");
+							}
+							if (rowA[3] != null) {
+								arbitroSTR = arbitroSTR.concat((String) rowA[3] + " ");
+							}
+							if (rowA[4] != null) {
+								arbitroSTR = arbitroSTR.concat((String) rowA[4] + " ");
+							}
+							arbitros=arbitros.concat(arbitroSTR);
+							arbitros=arbitros.concat(",");
+						}
+					}
+					if(!arbitros.equals("")){
+		 				arbitros=arbitros.substring(0, arbitros.length()-1);
+		 			}
+					dto1.setNombreArbitro(arbitros);
+					dto1.setAbogado(manejadorRolPersonaCaso.consultarAbogadoDelCaso((Long)campo[0]) == null?null:manejadorRolPersonaCaso.consultarAbogadoDelCaso((Long)campo[0]).getPersona().getNombreCompleto());
+					dto1.setEstado((campo[5] == null?"":fachadaDominios.getNombreDominio(UtilDominios.DOMINIO_ESTADO_AUDIENCIA,campo[5].toString())));
+					dto1.setObservaciones(nvl(campo[6],"").toString());
+					
+					datosReporte.add(dto1);						
+			}
+		}
+
+		return datosReporte;	
+
+	}
+    
+    private boolean validarFiltro(String key, Map<String, Object> filtros) {
+    	return filtros.get(key) != null && !filtros.get(key).toString().isEmpty()
+				&& !("0").equals(filtros.get(key).toString());
+    }
+
+    /**
+     * 
+     * 
+     * @param filtros
+     * @return
+     */
+	public List<ReporteAudienciaDTO> getDatosReporteAudienciaNuevo(Map<String, Object> filtros) {
+		List<ReporteAudienciaDTO> datosReporteAudiencia = new ArrayList<>();
+		List<String> parametros = new ArrayList<String>();
+		String roles = "";
+		
+		boolean filtroAbogado = filtros.get("abogado") != null && !filtros.get("abogado").toString().isEmpty()
+				&& !("0").equals(filtros.get("abogado").toString());
+		
+		boolean filtroArbitro = filtros.get("arbitro") != null && !filtros.get("arbitro").toString().isEmpty()
+				&& !("0").equals(filtros.get("arbitro").toString());
+				
+		boolean filtroSecre = filtros.get("secretario") != null && !filtros.get("secretario").toString().isEmpty()
+				&& !("0").equals(filtros.get("secretario").toString());
+		
+		boolean filtroFechas = ((filtros.get("fechaIni") != null && !filtros.get("fechaIni").toString().isEmpty()
+				&& !("0").equals(filtros.get("fechaIni").toString()))
+				&& (filtros.get("fechaFin") != null && !filtros.get("fechaFin").toString().isEmpty()
+						&& !("0").equals(filtros.get("fechaFin").toString())));  
+		String filtro = "AND";
+
+		StringBuilder nativeQuery = new StringBuilder();
+
+		nativeQuery.append("SELECT distinct ");
+		nativeQuery.append("       au.id_audiencia, ");
+		nativeQuery.append("       au.id_caso, ");
+		nativeQuery.append("       ca.nombre, ");
+		nativeQuery.append("       ca.fecha_radicacion, ");
+		nativeQuery.append("       (select dta.nombre ");
+		nativeQuery.append("          from DOMINIO dta ");
+		nativeQuery.append("         where dta.codigo = au.tipo_audiencia ");
+		nativeQuery.append("           and dta.dominio = '" + UtilDominios.DOMINIO_TIPO_AUDIENCIA + "') as tipo_audiencia,");
+		nativeQuery.append("       au.hora_inicio as fecha_audiencia,");
+		nativeQuery.append("       (select ");
+		nativeQuery.append("			stuff(( ");
+		nativeQuery.append("				select ', ' + concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) ");
+		nativeQuery.append("				  from ROL_PERSONA_CASO rp ");
+		nativeQuery.append("				  left join PERSONA pe on rp.id_persona=pe.id_persona ");
+		nativeQuery.append("				 where rp.id_caso=ca.id_caso ");
+		nativeQuery.append("   				   and rp.id_rol=(select id_rol from rol where nombre='" + UtilDominios.ROL_PERSONA_SECRETARIO_DE_TRIBUNAL + "') ");
+		nativeQuery.append("            for");
+		nativeQuery.append("				xml path('') ");
+		nativeQuery.append("			), 1, 1, '')) as secretario, ");
+		nativeQuery.append("	   (select ");
+		nativeQuery.append("			stuff(( ");
+		nativeQuery.append("				select ', ' + concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) ");
+		nativeQuery.append("                  from ROL_PERSONA_CASO rp");
+		nativeQuery.append("		  		  left join PERSONA pe on rp.id_persona=pe.id_persona");
+		nativeQuery.append("		         where rp.id_caso=ca.id_caso ");
+		nativeQuery.append("and rp.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		nativeQuery.append("and rp.estado in ('" + UtilDominios.ESTADO_ROL_PERSONA_CASO_POR_ACEPTAR + "','" + UtilDominios.ESTADO_ROL_PERSONA_CASO_ACEPTADO + "') ");
+		nativeQuery.append("            	   and rp.id_rol in (select DISTINCT rl.id_rol from PARAMETRO_SERVICIO_SORTEO pss inner join ROL rl on pss.id_rol = rl.id_rol) ");
+		nativeQuery.append("			for");
+		nativeQuery.append("				xml path('')");
+		nativeQuery.append("			), 1, 1, '')) as arbitros,");
+		nativeQuery.append("	   (select ");
+		nativeQuery.append("			stuff(( ");
+		nativeQuery.append("				select ', ' + concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) ");
+		nativeQuery.append("				  from ROL_PERSONA_CASO rp ");
+		nativeQuery.append("				  left join PERSONA pe on rp.id_persona=pe.id_persona ");
+		nativeQuery.append("			     where rp.id_caso=ca.id_caso ");
+		nativeQuery.append("			     and rp.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");		
+		nativeQuery.append("				   and rp.id_rol=(select id_rol from rol where nombre='ABO') ");
+		nativeQuery.append("			for ");
+		nativeQuery.append("				xml path('') ");
+		nativeQuery.append("	   		), 1, 1, '')) as abogado, ");
+		nativeQuery.append("       (select dta.nombre ");
+		nativeQuery.append("          from DOMINIO dta ");
+		nativeQuery.append("         where dta.codigo = au.estado ");
+		nativeQuery.append("       	   and dominio = '" + UtilDominios.DOMINIO_ESTADO_AUDIENCIA + "') as estado_audiencia, ");
+		nativeQuery.append("	   au.observaciones ");
+		nativeQuery.append("  FROM audiencia au ");
+		nativeQuery.append("  LEFT JOIN CASO ca on au.id_caso = ca.id_caso ");
+		if (filtroAbogado) {
+			nativeQuery.append("  LEFT JOIN ROL_PERSONA_CASO rpAbo on ca.id_caso = rpAbo.id_caso ");
+		}
+		if (filtroArbitro) {
+			nativeQuery.append("  LEFT JOIN ROL_PERSONA_CASO rpArb on ca.id_caso = rpArb.id_caso ");
+			
+		}
+		if (filtroSecre) {
+			nativeQuery.append("  LEFT JOIN ROL_PERSONA_CASO rpSecre on ca.id_caso = rpSecre.id_caso ");
+		}
+		if(filtroAbogado || filtroArbitro || filtroSecre){
+			String condiciones = "";
+			nativeQuery.append("  LEFT JOIN ROL rol on ");
+			if (filtroAbogado) condiciones = condiciones+" rol.id_rol = rpAbo.id_rol OR";
+			if (filtroArbitro) condiciones = condiciones+" rol.id_rol = rpArb.id_rol OR";
+			if (filtroSecre) condiciones = condiciones+" rol.id_rol = rpSecre.id_rol OR";
+			nativeQuery.append(condiciones.substring(0, condiciones.length()-3));
+		}
+		
+		nativeQuery.append(" WHERE au.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		
+		if (filtroFechas) {
+			nativeQuery.append(" AND au.hora_inicio BETWEEN ?1 and ?2 ");
+		}				
+		if (filtros.get("codigoCaso") != null && !filtros.get("codigoCaso").toString().isEmpty()) {
+			nativeQuery.append("AND au.id_caso = " + filtros.get("codigoCaso") + " ");		
+		}			
+		if (filtros.get("nombreCaso") != null && !filtros.get("nombreCaso").toString().isEmpty()) {
+			nativeQuery.append(" AND ca.nombre like '%" + filtros.get("nombreCaso") + "%' ");		
+		}
+		if (filtroAbogado) {
+			nativeQuery.append(" AND rpAbo.id_persona = " + filtros.get("abogado") + " ");	
+			parametros.add("ABO");
+		}
+		if (filtroArbitro) {
+			nativeQuery.append(" AND rpArb.id_persona = " + filtros.get("arbitro") + " ");	
+			nativeQuery.append(" AND rpArb.estado NOT IN(" + conComillasSimples(UtilDominios.ESTADO_ROL_PERSONA_CASO_RECHAZADO) + ","
+					+conComillasSimples(UtilDominios.ESTADO_ROL_PERSONA_CASO_INACTIVO)+ " )");	
+			parametros.add("ARB");
+		}
+		if (filtroSecre) {
+			nativeQuery.append(" AND rpSecre.id_persona = " + filtros.get("secretario") + " ");	
+			parametros.add("SEC");
+		}
+		if(filtroAbogado || filtroArbitro || filtroSecre){
+			for (String string : parametros) {
+				roles = roles +(conComillasSimples(string)+",");
+			}
+			roles = roles.substring(0, roles.length()-1);
+			nativeQuery.append(" AND rol.nombre IN ( "+roles+" ) ");	
+		}
+		if (filtros.get("tipoAudiencia") != null && !filtros.get("tipoAudiencia").toString().isEmpty()) {
+			nativeQuery.append(" and au.tipo_audiencia = '" + filtros.get("tipoAudiencia") + "' ");		
+		}
+		if (filtros.get("estado") != null && !filtros.get("estado").toString().isEmpty()) {
+			nativeQuery.append(" and au.estado = '" + filtros.get("estado") + "' ");
+		}
+		nativeQuery.append(" ORDER BY id_caso ");
+		
+		Query query = em.createNativeQuery(nativeQuery.toString());
+		
+		if (filtroFechas) {
+			Date fechaIni = (Date) filtros.get("fechaIni");
+			Date fechaFin = (Date) filtros.get("fechaFin");
+			query.setParameter(1, new Date(fechaIni.getTime()), TemporalType.DATE);
+			query.setParameter(2, new Date(fechaFin.getTime()), TemporalType.DATE);
+		}		
+		
+		@SuppressWarnings("unchecked")
+		List<Object[]> listObj = query.getResultList();
+		SimpleDateFormat formatofecha = new SimpleDateFormat("yyyy/M/dd");
+		
+		for (Object[] object : listObj) {
+			ReporteAudienciaDTO reporteAudienciaDTO = new ReporteAudienciaDTO();
+			reporteAudienciaDTO.setCodigoCaso(object[1] != null ? object[1].toString() : null);
+			reporteAudienciaDTO.setNombreCaso(object[2] != null ? object[2].toString() : null);
+			reporteAudienciaDTO
+					.setFechaRadicacionCaso(object[3] != null ? formatofecha.format((Date) object[3]) : null);
+			reporteAudienciaDTO.setTipoAudiencia(object[4] != null ? object[4].toString() : null);
+			reporteAudienciaDTO
+					.setFechaAudiencia(object[5] != null ? UtilOperaciones.formatearFechaHora((Date) object[5]) : null);
+			reporteAudienciaDTO.setNombreSecretario(object[6] != null ? object[6].toString() : null);
+			reporteAudienciaDTO.setNombreArbitro(object[7] != null ? object[7].toString() : null);
+			reporteAudienciaDTO.setAbogado(object[8] != null ? object[8].toString() : null);
+			reporteAudienciaDTO.setEstado(object[9] != null ? object[9].toString(): null);
+			reporteAudienciaDTO.setObservaciones(object[10] != null ? object[10].toString() : null);
+			
+			datosReporteAudiencia.add(reporteAudienciaDTO);
+		}
+
+		return datosReporteAudiencia;
+	}
+
+    /**
+	 * Metodo encargado de generar el reporte de las Arbitros por caso, lista todos los árbitros que estan
+	 * asignados a un Caso, con información del caso y de cada árbitro
+	 * @param filtros
+	 * @return List<ReporteCasosPorArbitroDTO>
+	 */	
+    
+    
+	public List<ReporteCasosPorArbitroDTO> getReporteCasosPorArbitro(Map filtros){	
+		String arbitro = filtros.get("arbitro").toString();
+		String materiaSeleccionada = filtros.get("materiaSeleccionada").toString();
+		String pronunciamientoSeleccionado = filtros.get("pronunciamientoSeleccionado")==null?"0":filtros.get("pronunciamientoSeleccionado").toString();
+		String tipoNombramientoSeccionado = filtros.get("tipoNombramientoSeccionado")==null?"0":filtros.get("tipoNombramientoSeccionado").toString();
+
+		StringBuilder jpqlQuery = new StringBuilder(); 
+		
+		String asignacion = " (SELECT MAX(fecha_de_asignacion) FROM EVENTO_ROL_PERSONA_CASO WHERE estado_asignado = ?9 "
+				+" and id_persona = pe.id_persona  AND id_caso = c.id_caso  AND estado_registro = ?1 ) AS fechaDesignacion, ";
+		
+		String comunicacion = " (SELECT MAX(fecha_de_asignacion) FROM EVENTO_ROL_PERSONA_CASO WHERE estado_asignado = ?10 "
+				+" and id_persona = pe.id_persona  AND id_caso = c.id_caso AND estado_registro = ?1 ) AS fechaComunicacion, ";
+		
+		String tipoPronunciamiento = " (SELECT nombre FROM DOMINIO WHERE dominio = ?8 AND codigo= pr.pronunciamiento ) AS pronunciamiento, "
+				+" pr.fecha AS fechaPronunciamiento ";
+		
+		
+		jpqlQuery.append(" SELECT ");
+		jpqlQuery.append(" c.id_caso AS codigoCaso, ");
+		jpqlQuery.append(" (SELECT nombre FROM SERVICIO WHERE id_servicio = c.id_servicio) AS tipoCaso, ");
+		jpqlQuery.append(" c.nombre AS nombreCaso, ");
+		jpqlQuery.append(" c.fecha_radicacion  AS fechaRadicacionCaso, ");
+		jpqlQuery.append(" (SELECT nombre FROM DOMINIO WHERE dominio = ?5 AND codigo = c.estado_caso) AS estadoCaso, ");
+		jpqlQuery.append(" (SELECT nombre FROM DOMINIO WHERE dominio = ?6 AND codigo = c.tipo_cuantia) AS cuantia, ");
+		jpqlQuery.append(" m.nombre AS materia, ");
+		jpqlQuery.append(" concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) AS arbitro, ");
+		jpqlQuery.append(" (SELECT nombre FROM DOMINIO WHERE dominio = ?7 AND codigo = rpc.metodo_nombramiento)  AS tipoNombramiento, ");
+		jpqlQuery.append(asignacion);
+		jpqlQuery.append(comunicacion);
+		jpqlQuery.append(tipoPronunciamiento);
+		jpqlQuery.append(" FROM ROL_PERSONA_CASO rpc ");
+		jpqlQuery.append(" LEFT JOIN  CASO c ON rpc.id_caso = c.id_caso ");
+		jpqlQuery.append(" LEFT JOIN PERSONA pe ON pe.id_persona = rpc.id_persona ");
+		jpqlQuery.append(" LEFT JOIN MATERIA m ON m.id_materia = c.id_materia AND m.estado_registro = ?1 ");
+		jpqlQuery.append(" LEFT JOIN PRONUNCIAMIENTO pr ON pr.id_pronunciamiento = rpc.id_pronunciamiento AND pr.estado_registro = ?1 ");
+		jpqlQuery.append(" WHERE c.estado_registro = ?1 ");
+		jpqlQuery.append(" AND pe.estado_registro = ?1 ");
+		jpqlQuery.append(" AND rpc.estado_registro = ?1 ");
+		jpqlQuery.append(" AND rpc.tipo_nombramiento = ?11 ");
+		jpqlQuery.append(" AND c.estado_caso != ?4 ");
+		jpqlQuery.append(" AND cast( c.fecha_radicacion as DATE)  BETWEEN  ");
+		jpqlQuery.append(" cast( ?2 as DATE) AND cast( ?3 as DATE)  ");
+		jpqlQuery.append(" AND rpc.id_rol in (select DISTINCT rl.id_rol from PARAMETRO_SERVICIO_SORTEO pss inner join ROL rl on pss.id_rol = rl.id_rol) ");
+		
+		if(!arbitro.equals("0"))
+			jpqlQuery.append("  AND pe.id_persona = ?12");		
+		
+		if(!materiaSeleccionada.equals("0"))
+			jpqlQuery.append(" AND m.id_materia = ?13 ");
+		
+		if(!tipoNombramientoSeccionado.equals("0"))
+			jpqlQuery.append(" AND rpc.metodo_nombramiento = ?14");
+		
+		if (!pronunciamientoSeleccionado.equals("0"))
+			jpqlQuery.append(" AND pr.pronunciamiento = ?15 ");
+
+		jpqlQuery.append(" ORDER BY c.id_caso ");
+		
+		Query query = em.createNativeQuery(jpqlQuery.toString(), ReporteCasosPorArbitroDTO.class);
+		
+		query.setParameter(1, UtilDominios.ESTADO_REGISTRO_ACTIVO);
+		query.setParameter(2,  filtros.get("fechaIni"));
+		query.setParameter(3,  filtros.get("fechaFin"));
+		query.setParameter(4, UtilConstantes.ESTADO_CASO_EN_CREACION);
+		query.setParameter(5, UtilDominios.DOMINIO_ESTADO_CASO);
+		query.setParameter(6, UtilDominios.DOMINIO_TIPO_CUANTIA);
+		query.setParameter(7, UtilDominios.METODOS_DE_NOMBRAMIENTO);
+		query.setParameter(8, UtilDominios.DOMINIO_TIPO_PRONUNCIAMIENTO);
+		query.setParameter(9, UtilDominios.ESTADO_ROL_PERSONA_CASO_POR_ACEPTAR);
+		query.setParameter(10, UtilDominios.ESTADO_ROL_PERSONA_CASO_COMUNICADO);
+		query.setParameter(11, UtilDominios.TIPO_NOMBRAMIENTO_PRINCIPAL);
+		query.setParameter(12, Long.valueOf(arbitro));
+		query.setParameter(13, Long.valueOf(materiaSeleccionada));
+		query.setParameter(14, tipoNombramientoSeccionado);
+		query.setParameter(15, pronunciamientoSeleccionado);
+
+		return query.getResultList();
+	}
+
+	/**
+	 * Metodo encargado de generar el reporte de las Arbitros por caso, lista todos los árbitros que estan
+	 * asignados a un Caso, adicionalmente la disponibilidad para sorteo en la materia del caso
+	 * @param filtros
+	 * @return List<ReporteDeArbitroDTO>
+	 */	
+	public List<ReporteDeArbitroDTO> getDatosReporteArbitros(Map filtros){	
+
+		String arbitro = nvl(filtros.get("arbitro"),"").toString();
+		String tipoCasoCodigo = nvl(filtros.get("tipoCasoCodigo"),"").toString();
+		String estadoCodigo = nvl(filtros.get("estadoCodigo"),"").toString();
+		String tipoListaCodigo = nvl(filtros.get("tipoListaCodigo"),"").toString();
+		String materiaSeleccionada = filtros.get("materiaSeleccionada").toString();
+		String disponibilidad = nvl(filtros.get("disponibilidad"),"").toString();
+
+		StringBuilder nativeQuery = new StringBuilder();
+		nativeQuery.append(" SELECT DISTINCT p.primer_nombre_o_razon_social,");
+		nativeQuery.append("		p.segundo_nombre,");
+		nativeQuery.append("		p.primer_apellido,");
+		nativeQuery.append("		p.segundo_apellido,");
+		nativeQuery.append(
+				"		(select nombre from DOMINIO where epts.estado = codigo and dominio = 'ESTADO_ARBITROS') estado_persona,");
+		nativeQuery.append("		s.nombre,");
+		nativeQuery.append("		(select nombre from lista where id_lista = rp.id_lista),");
+		nativeQuery.append("		(select nombre from materia where id_materia = psm.id_materia),");
+		nativeQuery.append("		CASE epts.estado WHEN 'EAH' THEN psm.estado_para_sorteo ELSE '' END AS estado_para_sorteo ");
+		nativeQuery.append("   FROM PERSONA p,");
+		nativeQuery.append("        ROL r,");
+		nativeQuery.append("        SERVICIO s,");
+		if(!materiaSeleccionada.equals("0"))
+			nativeQuery.append("        MATERIA m,");
+		nativeQuery.append("        ROL_PERSONA rp,");
+		if(!tipoListaCodigo.equals(""))
+			nativeQuery.append("        LISTA l,");
+		nativeQuery.append("        PERSONA_SERVICIO_MATERIA psm, ");
+		nativeQuery.append("        PARAMETRO_SERVICIO_SORTEO pss, ");
+		nativeQuery.append("        ESTADO_PERSONA_TIPO_SERVICIO epts ");
+		nativeQuery.append("  WHERE p.id_persona = rp.id_persona");
+		nativeQuery.append("    AND r.id_rol = rp.id_rol");
+		if(!tipoListaCodigo.equals(""))
+			nativeQuery.append("    AND rp.id_lista = l.id_lista");				
+		nativeQuery.append("    AND psm.id_persona = p.id_persona");
+		nativeQuery.append("    AND psm.id_servicio = s.id_servicio");
+		if(!materiaSeleccionada.equals("0"))
+			nativeQuery.append("    AND psm.id_materia = m.id_materia ");
+		nativeQuery.append("    AND CAST(rp.fecha_inicio_vigencia AS DATE) < CAST(GETDATE() AS DATE) ");
+		nativeQuery.append("    AND (rp.fecha_fin_vigencia is null OR CAST(rp.fecha_fin_vigencia AS DATE) >= CAST(GETDATE() AS DATE)) ");
+		nativeQuery.append("    AND rp.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "'");
+		nativeQuery.append("    AND psm.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "'");
+		nativeQuery.append("    AND p.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "'");		
+		nativeQuery.append("    AND rp.id_rol = pss.id_rol ");
+		nativeQuery.append("    AND psm.id_servicio = pss.id_servicio ");
+		nativeQuery.append("    AND p.id_persona = epts.id_persona ");
+		
+		if(!tipoCasoCodigo.equals("")) {
+			nativeQuery.append("    AND r.nombre IN (select rl.nombre from PARAMETRO_SERVICIO_SORTEO pss inner join ROL rl on pss.id_rol = rl.id_rol where pss.id_servicio = ?3) ");			
+		} else {
+			nativeQuery.append("    AND r.nombre IN (select DISTINCT rl.nombre from PARAMETRO_SERVICIO_SORTEO pss inner join ROL rl on pss.id_rol = rl.id_rol) ");
+		}
+			
+		if(!arbitro.equals(""))
+			nativeQuery.append("    AND p.id_persona = ?2 ");
+
+		if(!tipoCasoCodigo.equals(""))
+			nativeQuery.append("    AND s.id_servicio = ?3 ");
+
+		if(!estadoCodigo.equals(""))
+			nativeQuery.append("    AND epts.estado = ?4 ");
+
+		if(!tipoListaCodigo.equals(""))
+			nativeQuery.append("    AND l.id_lista = ?5 ");
+
+		if(!materiaSeleccionada.equals("0"))
+			nativeQuery.append("    AND m.id_materia = ?6 ");
+		
+		if(!disponibilidad.equals(""))
+			nativeQuery.append("    AND psm.estado_para_sorteo = ?7 ");
+
+		nativeQuery.append(" ORDER BY p.primer_nombre_o_razon_social ASC ");
+		
+		Query query = em.createNativeQuery(nativeQuery.toString());
+
+		if (!arbitro.equals(""))
+			query.setParameter(2, Long.parseLong(arbitro));
+
+		if (!tipoCasoCodigo.equals(""))
+			query.setParameter(3, Long.valueOf(tipoCasoCodigo));
+
+		if (!estadoCodigo.equals(""))
+			query.setParameter(4, estadoCodigo);
+
+		if (!tipoListaCodigo.equals(""))
+			query.setParameter(5, Long.valueOf(tipoListaCodigo));
+
+		if (!materiaSeleccionada.equals("0"))
+			query.setParameter(6, Long.valueOf(materiaSeleccionada));
+
+		if (!disponibilidad.equals(""))
+			query.setParameter(7, (disponibilidad.equals(UtilConstantes.SI) ? 
+					UtilDominios.ESTADO_REGISTRO_ACTIVO : UtilDominios.ESTADO_REGISTRO_INACTIVO));
+
+		List<ReporteDeArbitroDTO> estadosArbitros = new ArrayList<>(); 
+
+		List<Object[]> listObj = query.getResultList();
+
+		for (Object[] campo : listObj) {
+
+			ReporteDeArbitroDTO estadoArbitro1 = new ReporteDeArbitroDTO();
+			estadoArbitro1.setNombre(
+					nvl(campo[0], "") + " " + nvl(campo[1], "") + " " + nvl(campo[2], "") + " " + nvl(campo[3], ""));
+			estadoArbitro1.setEstado((campo[4] == null ? "" : campo[4].toString()));
+			estadoArbitro1.setTipoCaso(nvl(campo[5], "").toString());
+			estadoArbitro1.setTipoLista((campo[6] == null ? ""
+					: fachadaDominios.getNombreDominio(UtilDominios.DOMINIO_TIPO_LISTA, campo[6].toString())));
+			estadoArbitro1.setMateria(nvl(campo[7], "").toString());
+			
+			String disponibilidadArbitro = "";
+			
+			if (campo[8] != null && !campo[8].toString().isEmpty()) {
+				disponibilidadArbitro = UtilDominios.ESTADO_REGISTRO_ACTIVO.equals(campo[8]) ? UtilConstantes.SI
+						: UtilConstantes.NO;
+			}
+			estadoArbitro1.setDisponibilidad(disponibilidadArbitro);
+			estadosArbitros.add(estadoArbitro1);		
+		}
+		return estadosArbitros;
+	}
+
+
+	/**
+	 * Metodo encargado de generar el reporte de 
+	 * los pagos definidos en HONORARIOS_FIJADOS 
+	 * @param filtros
+	 * @return List<ReporteIngresosDTO>
+	 */	
+    @SuppressWarnings("unchecked")
+	public List<ReporteIngresosDTO> getReporteIngresos(Map filtros){
+		List<ReporteIngresosDTO> ingresos = new ArrayList<ReporteIngresosDTO>();
+		DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+		String fechaIncial = (String) filtros.get("fechaInicial");
+		String fechaFinal = (String) filtros.get("fechaFinal");
+		String pagoSeleccionado = (String) filtros.get("codigo");
+		List<Object[]> rows;
+		List<Object[]> rowsSec;
+		//TODO revisar que se debe cargar en cada lista
+		InformacionFiltro filtro = new InformacionFiltro(TipoFiltro.EXACTO, Dominio.ENTIDAD_DOMINIO_PK_DOMINIO, UtilConstantes.ROL_PERSONA_EXTERNO);
+		List<InformacionFiltro> filtrosDominio = new ArrayList<>();
+		filtrosDominio.add(filtro);
+
+		StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append(
+				"select c.idCaso, cr.persona.primerNombreORazonSocial, cr.persona.segundoNombre, cr.persona.primerApellido, cr.persona.segundoApellido  ");
+		jpqlQuery.append("from Caso c join ");
+		jpqlQuery.append("c.idCaso as cev ");
+		jpqlQuery.append("left join c.rolPersonaCasoList as cr ");
+		jpqlQuery.append("left join cr.rol as cl ");
+		jpqlQuery.append("where cl.nombre = 'SEC' ");
+		jpqlQuery.append("ORDER BY c.idCaso ASC ");
+		Query query = em.createQuery(jpqlQuery.toString());
+
+		rowsSec = query.getResultList();
+		
+		StringBuilder jpqlQuery1 = new StringBuilder();
+		jpqlQuery1.append(
+				"select c.nombre, "					//0
+				+ "ph.parteQuePaga, "				//1
+				+ " '' , "				//2
+				+ "hf.valorFijadoPretensiones, "	//3
+				+ "hf.fechaFijacion, "				//4
+				+ "hf.fechaLimiteDePago, "			//5
+				+ "ph.valorPagado, "				//6
+				+ "ph.fechaPago, "					//7
+				+ "c.idCaso ");						//8
+		jpqlQuery1.append("from HonorariosFijados hf LEFT JOIN ");
+		jpqlQuery1.append(" hf.caso c LEFT JOIN ");		
+		jpqlQuery1.append(" c.pagoHonorariosList ph ");
+		jpqlQuery1.append("where (hf.fechaLimiteDePago BETWEEN '" + fechaIncial + "' AND '" + fechaFinal + "') ");		
+		jpqlQuery1.append("and c.idCaso = hf.idCaso ");
+		
+		DominioPK dominioPK=new DominioPK();
+		dominioPK.setCodigo(pagoSeleccionado);
+		dominioPK.setDominio(UtilDominios.DOMINIO_PAGADOS);
+		Dominio dominio = manejadorDominio.buscar(dominioPK);
+		
+		if ((pagoSeleccionado != null && !pagoSeleccionado.equals("")) ) {
+			if(dominio.getNombre().equals("SI")){	
+				jpqlQuery1.append("and c.idCaso = ph.idCaso ");
+			}else if (dominio.getNombre().equals("NO")) {			
+				jpqlQuery1.append("and ph.idCaso IS NULL ");
+			}
+		}else{
+			jpqlQuery1.append("and (c.idCaso = ph.idCaso OR ph.idCaso IS NULL) ");
+			
+		}
+		
+		jpqlQuery1.append("ORDER BY c.idCaso ASC ");
+		Query query1 = em.createQuery(jpqlQuery1.toString());
+		rows = query1.getResultList();
+
+		for (Object[] row : rows) {
+
+			ReporteIngresosDTO reporte = new ReporteIngresosDTO();
+			reporte.setNombreCaso((String) row[0]);
+			if(row[1] != null){
+				reporte.setTipoParte(fachadaDominios.getNombreDominio(UtilDominios.DOMINIO_ROL_PERSONA,row[1].toString()));
+				List<RolPersonaCaso> ps = manejadorRolPersonaCaso.consultarPersonasAsignadasCasoPorRol(Long.valueOf(row[8].toString()),row[1].toString());
+				if(!ps.isEmpty()){
+	 				List<String> tipos = new ArrayList<>();
+	 				tipos.add(UtilDominios.TIPO_TELEFONO_CELULAR);
+	 				List<Telefono> tel = manejadorTelefono.consultarPorTipoYPersona(tipos,ps.get(0).getPersona().getIdPersona());
+					reporte.setTelefono(tel.isEmpty() ? "" : tel.get(0).getNumero());
+				}
+			}
+			
+			String reportDate1 = df.format(row[4]);
+			reporte.setFechaDeFijacion(reportDate1);
+			reporte.setValorFijado((BigDecimal)row[3]);
+			String reportDate = row[5]==null?"":df.format(row[5]);
+			String reportDate2 = row[7]==null?"":df.format(row[7]);
+			reporte.setFechaLimiteDePago(reportDate); 
+			reporte.setValorPagado(row[6]==null?BigDecimal.valueOf(0.0):(BigDecimal)row[6]);
+			reporte.setFechaDePago(reportDate2);
+
+			String secretario="";
+			for (Object[] rowA : rowsSec) {
+				if (row[8].equals(rowA[0])) {
+					if (rowA[1] != null) {
+						secretario = (String) rowA[1] + " ";
+					}
+					if (rowA[2] != null) {
+						secretario = secretario.concat((String) rowA[2] + " ");
+					}
+					if (rowA[3] != null) {
+						secretario = secretario.concat((String) rowA[3] + " ");
+					}
+					if (rowA[4] != null) {
+						secretario = secretario.concat((String) rowA[4] + " ");
+					}
+					reporte.setSecretario(secretario);
+				}				
+			}			
+			ingresos.add(reporte);
+		}
+
+
+		return ingresos;
+	}
+
+	/**
+	 * Metodo encargado de generar el reporte de 
+	 * los casos cerrados 
+	 * @param filtros
+	 * @return List<ReporteCasosCerradosDTO>
+	 * @throws ParseException 
+	 */	
+   	public List<ReporteCasosCerradosDTO> getReporteCasosCerrados(Map filtros) {    	
+   		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+   		Date fechaInicial = UtilOperaciones.obtenerFechaComienzoDelDia((Date) filtros.get("fechaInicial"));
+		Date fechaFinal =  UtilOperaciones.obtenerFechaFinDelDia((Date) filtros.get("fechaFinal"));
+		Long idMateria = null;
+		if ((filtros.get("materia") != null && !filtros.get("materia").equals("")) ) {
+			idMateria = Long.parseLong((String) filtros.get("materia"));
+		}
+		String motivoCierre = (String) filtros.get("codigo");		
+	   
+		List<ReporteCasosCerradosDTO> reporteCasosCerrados;
+			
+		String subConsultaApodDemandante = " (select stuff((select ', ' + concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+" from ROL_PERSONA_CASO rp "
+				+" left join PERSONA pe on rp.id_persona=pe.id_persona "
+				+" where rp.id_caso=c.id_caso "
+				+" and rp.estado_registro = ?1 "
+				+" and rp.id_rol=(select id_rol from rol where nombre= ?2 ) for xml path('')), 1, 1, '')) as apoderadoDemandante, "; 
+			
+		String subConsultaApodDemandado = " (select stuff((select ', ' + concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+" from ROL_PERSONA_CASO rp "
+				+" left join PERSONA pe on rp.id_persona=pe.id_persona "
+				+" where rp.id_caso=c.id_caso "
+				+" and rp.estado_registro = ?1 " 
+				+" and rp.id_rol=(select id_rol from rol where nombre= ?3 ) for xml path('')), 1, 1, '')) as apoderadoDemandado, ";
+			
+		String subConsultaArbitros = " (select stuff((select ', ' + concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+" from ROL_PERSONA_CASO rp "
+				+" left join PERSONA pe on rp.id_persona=pe.id_persona " 
+				+" where rp.id_caso = c.id_caso "
+				+" and rp.estado_registro = ?1 " 
+				+" and rp.estado in ( ?4 , ?5 ) "
+				+" and rp.id_rol in (select DISTINCT rl.id_rol from PARAMETRO_SERVICIO_SORTEO pss inner join ROL rl on pss.id_rol = rl.id_rol) for xml path('')), 1, 1, '')) as arbitros, ";
+
+		String subConsultaSecretarios = " (select stuff((select ', ' + concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+" from ROL_PERSONA_CASO rp "
+				+" left join PERSONA pe on rp.id_persona=pe.id_persona " 
+				+" where rp.id_caso=c.id_caso "
+				+" and rp.estado_registro = ?1 "
+				+" and rp.estado in ( ?4 , ?5 ) " 
+				+" and rp.id_rol=(select id_rol from rol where nombre= ?6 ) for xml path('')), 1, 1, '')) as secretario, ";
+			
+			
+		StringBuilder jpqlQuery = new StringBuilder();
+			
+		jpqlQuery.append(" SELECT ");
+		jpqlQuery.append(" c.id_caso AS  codigoCaso, ");
+		jpqlQuery.append("(SELECT nombre FROM SERVICIO WHERE id_servicio = c.id_servicio AND estado_registro = ?1 ) AS servicioCaso, ");
+		jpqlQuery.append(" c.nombre AS nombreCaso, ");
+		jpqlQuery.append(" c.fecha_radicacion AS fechaRadicacion, ");
+		jpqlQuery.append(" c.valor_pretensiones AS valorPretensiones, ");
+		jpqlQuery.append(" m.nombre AS materia, ");
+		jpqlQuery.append(subConsultaApodDemandante);
+		jpqlQuery.append(subConsultaApodDemandado);
+		jpqlQuery.append(subConsultaArbitros);
+		jpqlQuery.append(subConsultaSecretarios);
+		jpqlQuery.append("(SELECT nombre FROM DOMINIO WHERE DOMINIO = ?7 AND codigo = c.motivo_cierre) AS motivoCierre,	 ");
+		jpqlQuery.append(" e.fecha_evento AS fechaCierre, ");
+		jpqlQuery.append(" e.observaciones AS observacionesCierre ");
+		jpqlQuery.append(" FROM CASO c ");
+		jpqlQuery.append(" LEFT JOIN  EVENTO e ON c.id_caso = e.id_caso ");
+		jpqlQuery.append(" LEFT JOIN  MATERIA m ON m.id_materia = c.id_materia ");
+		jpqlQuery.append(" WHERE c.estado_caso = ?8 ");
+		jpqlQuery.append(" AND c.estado_registro = ?1 ");
+		jpqlQuery.append(" AND e.estado_registro = ?1 ");
+		jpqlQuery.append(" AND m.estado_registro = ?1 ");
+		jpqlQuery.append(" AND e.tipo_evento = ?9 ");
+		jpqlQuery.append(" AND e.fecha_evento BETWEEN  ?10 AND ?11  ");
+		if (null != idMateria) {
+			jpqlQuery.append(" AND m.id_materia = ?12 ");
+		}
+
+		if (null != motivoCierre && !motivoCierre.isEmpty()) {
+			jpqlQuery.append("AND c.motivo_cierre = ?13 ");
+		}
+		
+		jpqlQuery.append(" ORDER BY e.fecha_evento DESC ");
+			
+		
+		Query query = em.createNativeQuery(jpqlQuery.toString(), ReporteCasosCerradosDTO.class);
+		
+		query.setParameter(1, UtilDominios.ESTADO_REGISTRO_ACTIVO);
+		query.setParameter(2, UtilDominios.ROL_PERSONA_APODERADO_DEMANDANTE);
+		query.setParameter(3, UtilDominios.ROL_PERSONA_APODERADO_DEMANDADO);
+		query.setParameter(4, UtilDominios.ESTADO_ROL_PERSONA_CASO_ACEPTADO);
+		query.setParameter(5, UtilDominios.ESTADO_ROL_PERSONA_CASO_POR_ACEPTAR);
+		query.setParameter(6, UtilDominios.ROL_PERSONA_SECRETARIO_DE_TRIBUNAL);
+		query.setParameter(7, UtilDominios.DOMINIO_MOTIVO_CIERRE);
+		query.setParameter(8, UtilDominios.ESTADO_CASO_CERRADO);
+		query.setParameter(9, UtilDominios.TIPO_EVENTO_CASO_CERRADO);
+		query.setParameter(10, dateFormat.format(fechaInicial));
+		query.setParameter(11, dateFormat.format(fechaFinal));
+		query.setParameter(12, idMateria);
+		query.setParameter(13, motivoCierre);
+
+		
+		reporteCasosCerrados = query.getResultList();
+
+    	return reporteCasosCerrados;
+    }
+    
+   	
+	/**
+	 * Metodo encargado de generar el reporte de 
+	 * las audiencias programadas, con un listado de las preferencias de refrigerio de los asistentes
+	 * @param filtros
+	 * @return List<ReporteAudienciasProgramacionRefrigeriosDTO>
+	 */	
+	@SuppressWarnings("unchecked")
+	public List<ReporteAudienciasProgramacionRefrigeriosDTO> getReporteAudienciasProgramacionRefrigerios(Map filtros) {
+
+		List<ReporteAudienciasProgramacionRefrigeriosDTO> audienciasProgRefrigeriosDTOs = new ArrayList<ReporteAudienciasProgramacionRefrigeriosDTO>();
+		DateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+		
+		try {
+			Date ffinal = df.parse(filtros.get("fechaFin").toString());			
+			String fechaFinal = df.format(UtilSimasc.agregarDiasAFecha(ffinal, 1));
+			
+			StringBuilder jpqlQueryAudiencia = new StringBuilder();
+			jpqlQueryAudiencia.append("select ");
+			jpqlQueryAudiencia.append("ca.id_caso as codigoCaso, "); // 0
+			jpqlQueryAudiencia.append("ca.nombre as nombreCaso, "); // 1
+			jpqlQueryAudiencia.append("au.hora_inicio as fechaHoraAudiencia, "); // 2
+			jpqlQueryAudiencia.append("(select nombre from dominio where dominio='TIPO_AUDIENCIA' and codigo = au.tipo_audiencia) as tipoAudiencia, "); // 3
+			jpqlQueryAudiencia.append("au.cantidad_asistentes AS cantidadAsistentes, "); // 4
+			jpqlQueryAudiencia.append("(select stuff((select ', ' + concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) ");
+			jpqlQueryAudiencia.append("from ROL_PERSONA_CASO rp ");
+			jpqlQueryAudiencia.append("left join PERSONA pe on rp.id_persona=pe.id_persona ");
+			jpqlQueryAudiencia.append("where rp.id_caso = ca.id_caso ");
+			jpqlQueryAudiencia.append("and rp.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+			jpqlQueryAudiencia.append("and rp.estado in ('" + UtilDominios.ESTADO_ROL_PERSONA_CASO_POR_ACEPTAR + "','" + UtilDominios.ESTADO_ROL_PERSONA_CASO_ACEPTADO + "') ");		
+			jpqlQueryAudiencia.append("and rp.id_rol in (select DISTINCT rl.id_rol from PARAMETRO_SERVICIO_SORTEO pss inner join ROL rl on pss.id_rol = rl.id_rol) for xml path('')), 1, 1, '')) as nombreArbitros, "); // 5
+			jpqlQueryAudiencia.append("(select stuff((select ', ' + concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) ");
+			jpqlQueryAudiencia.append("from ROL_PERSONA_CASO rp ");
+			jpqlQueryAudiencia.append("left join PERSONA pe on rp.id_persona=pe.id_persona ");
+			jpqlQueryAudiencia.append("where rp.id_caso=ca.id_caso ");
+			jpqlQueryAudiencia.append("and rp.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+			jpqlQueryAudiencia.append("and rp.id_rol=(select id_rol from rol where nombre='SEC') for xml path('')), 1, 1, '')) as nombreSecretarios "); // 6
+			jpqlQueryAudiencia.append("from audiencia au ");
+			jpqlQueryAudiencia.append("inner join CASO ca on au.id_caso = ca.id_caso ");
+			jpqlQueryAudiencia.append("where au.hora_inicio between '" + filtros.get("fechaIni").toString() + "' AND '" + fechaFinal + "' ");
+			jpqlQueryAudiencia.append("and au.estado = '" + UtilDominios.ESTADO_AUDIENCIA_PENDIENTE + "' ");
+			jpqlQueryAudiencia.append("and au.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+			
+			Query query = em.createNativeQuery(jpqlQueryAudiencia.toString(), ReporteAudienciasProgramacionRefrigeriosDTO.class);
+			audienciasProgRefrigeriosDTOs = query.getResultList();
+			
+		} catch (ParseException e) {
+			LOGGER.info(e.getMessage());
+		}
+		return audienciasProgRefrigeriosDTOs;
+	}
+	
+	
+	/**
+	 * Metodo encargado de generar el reporte de 
+	 * las salas que estarán ocupadas o están ocupadas, esto mediante la tabla AGENDAMIENTO
+	 * @param filtros
+	 * @return List<ReporteAudienciasProgramacionRefrigeriosDTO>
+	 */	
+	public List<ReporteSalasOcupadasDTO> getReporteSalasOcupadas(Map filtros){	
+		Date fecha = filtros.get("fechaIni")==null?null:(Date)filtros.get("fechaIni");
+		String idCaso = filtros.get("codigoCaso")==null?"":filtros.get("codigoCaso").toString();
+		String nombreCaso =filtros.get("nombreCaso")==null?"":filtros.get("nombreCaso").toString();
+		String idSede = filtros.get("sedeSeleccionada")==null?"":filtros.get("sedeSeleccionada").toString();
+
+		SimpleDateFormat formatofecha = new SimpleDateFormat("yyyy/M/dd");
+		SimpleDateFormat formatoHora = new SimpleDateFormat("hh:mm a");
+		
+		List<ReporteSalasOcupadasDTO> salas = new ArrayList<ReporteSalasOcupadasDTO>();
+		
+		String[] rolArbitros = UtilConstantes.ROLES_ARBITROS;
+		
+		StringBuilder nombreArbitros;
+		StringBuilder secretarios;
+
+		StringBuilder jpqlQuery = new StringBuilder(); 
+
+		jpqlQuery.append(" SELECT age FROM Agendamiento age ");
+		jpqlQuery.append(" LEFT JOIN age.sala s");
+		jpqlQuery.append(" LEFT JOIN s.sede d");
+		jpqlQuery.append(" LEFT JOIN age.audiencia a");
+		jpqlQuery.append(" LEFT JOIN a.caso c");
+		jpqlQuery.append(" WHERE age.estadoRegistro =: ");
+		jpqlQuery.append(Agendamiento.ENTIDAD_AGENDAMIENTO_ESTADO_REGISTRO);
+		
+		if(fecha != null){
+			jpqlQuery.append(" AND (age.horaInicio BETWEEN :fechaIni AND :fechaFin OR age.horaFin BETWEEN :fechaIni AND :fechaFin) ");
+		}	
+		
+		
+		if(nombreCaso != null && !nombreCaso.equals("")){
+			jpqlQuery.append(" AND LOWER(c.nombre) LIKE : ");
+			jpqlQuery.append(Caso.ENTIDAD_CASO_NOMBRE);
+		}
+		if(idCaso != null && !idCaso.equals("") && !idCaso.equals("0")){
+			jpqlQuery.append(" AND c.idCaso=: ");
+			jpqlQuery.append(Caso.ENTIDAD_CASO_PK);
+		}
+		if(idSede != null && !idSede.equals("") && !idSede.equals("0")){
+			jpqlQuery.append(" AND d.idSede=:");
+			jpqlQuery.append(Sede.ENTIDAD_SEDE_PK);
+		}
+		
+		
+			
+		
+		Query query = em.createQuery(jpqlQuery.toString(), Agendamiento.class);
+		
+		if(fecha != null){
+			Date fechaIni = obtenerFechaComienzoDelDia(fecha);
+			query.setParameter("fechaIni", fechaIni,TemporalType.DATE);
+			Date fechaFin = obtenerFechaFinDelDia(fecha);
+			query.setParameter("fechaFin", fechaFin,TemporalType.DATE);
+		}
+		
+		if(nombreCaso != null && !nombreCaso.equals(""))
+			query.setParameter(Caso.ENTIDAD_CASO_NOMBRE, "%" +  nombreCaso.toLowerCase() + "%");
+		
+		if(idCaso != null && !idCaso.equals("") && !idCaso.equals("0"))
+			query.setParameter(Caso.ENTIDAD_CASO_PK, Long.valueOf(idCaso));
+		
+		if(idSede != null && !idSede.equals("") && !idSede.equals("0"))
+			query.setParameter(Sede.ENTIDAD_SEDE_PK, Long.valueOf(idSede));
+			
+		
+		query.setParameter(Agendamiento.ENTIDAD_AGENDAMIENTO_ESTADO_REGISTRO, UtilDominios.ESTADO_REGISTRO_ACTIVO);
+		
+		List<Agendamiento> agendamientos = query.getResultList();
+		
+		for(Agendamiento ag : agendamientos){
+			nombreArbitros = new StringBuilder();
+			secretarios = new StringBuilder();
+			ReporteSalasOcupadasDTO dto = new ReporteSalasOcupadasDTO();
+			Sede sede = ag.getSala().getSede() != null ? ag.getSala().getSede() : new Sede();
+			Caso caso = ag.getCaso() != null ? ag.getCaso() : new Caso();
+			Audiencia audiencia = ag.getAudiencia() != null ? ag.getAudiencia() : null;
+			
+			dto.setSede(sede.getNombre() != null ? sede.getNombre() : null);
+			if(ag.getSala() != null && ag.getSala().getNumeroSala() != null){
+				dto.setNumeroSala(String.valueOf(ag.getSala().getNumeroSala()));
+			}
+			
+			dto.setNombreCaso(caso.getNombre() != null ? caso.getNombre() : null);
+			dto.setCodigoCaso(caso.getIdCaso() != null ? caso.getIdCaso().toString() : null);
+			
+			if(audiencia != null){
+				dto.setFechaAudiencia(formatofecha.format(audiencia.getHoraInicio()));
+				dto.setHoraInicial(formatoHora.format(audiencia.getHoraInicio()));
+				dto.setHoraFinal(formatoHora.format(audiencia.getHoraFin()));
+			}
+						
+			List<RolPersonaCaso> rolPersonaCasos =
+					ag.getCaso() != null && !ag.getCaso().getRolPersonaCasoList().isEmpty() ? ag.getCaso().getRolPersonaCasoList() : new ArrayList<RolPersonaCaso>();
+			
+			for(RolPersonaCaso rpc : rolPersonaCasos){
+				for(String rol : rolArbitros){
+					if (rol.equalsIgnoreCase(rpc.getRol().getNombre()) && UtilDominios.ESTADO_ROL_PERSONA_CASO_ACEPTADO
+							.equalsIgnoreCase(rpc.getEstado())) {
+						nombreArbitros.append(rpc.getPersona().getNombreCompleto()).append(UtilConstantes.CARACTER_ESPACIO);
+						break;
+					}
+				}
+				if(UtilDominios.ROL_PERSONA_SECRETARIO_DE_TRIBUNAL.equalsIgnoreCase(rpc.getRol().getNombre())
+						&& UtilDominios.ESTADO_ROL_PERSONA_CASO_ACEPTADO.equalsIgnoreCase(rpc.getEstado())){
+					secretarios.append(rpc.getPersona().getNombreCompleto()).append(UtilConstantes.CARACTER_ESPACIO);
+				}
+			}
+			dto.setArbitros(nombreArbitros.toString());
+			dto.setSecretario(secretarios.toString());
+			salas.add(dto);
+		}		
+		return salas;
+	} 
+	
+	/**
+	 * Metodo encargado de generar el reporte caso por secretario, genera información del caso que tiene 
+	 * asignado el secretario que consulta el reporte, es decir, del usuario logueado
+	 * 
+	 * @param fechaInicial	Fecha de radicación del caso
+	 * @param fechaFinal	Fecha de radicación del caso
+	 * @param idCaso	identificador del Caso
+	 * @param nombreCaso	Palabras clave que hagan parte de la cadena del nombre del caso
+	 * @return List<ReporteCasoSecretarioDTO>
+	 */
+	@SuppressWarnings("unchecked")
+	public List<ReporteCasoSecretarioDTO> getReporteCasoSecretario(Date fechaInicial, Date fechaFinal, Long idCaso,
+			String nombreCaso, String usuarioSesion) {
+		Date fechaInicioDia = null;
+		Date fechaFinDia = null;
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		if(fechaInicial != null){
+			fechaInicioDia = UtilOperaciones.obtenerFechaComienzoDelDia(fechaInicial);
+		}
+		
+		if(fechaFinal != null){
+			fechaFinDia = UtilOperaciones.obtenerFechaFinDelDia(fechaFinal);
+		}
+		
+		List<ReporteCasoSecretarioDTO> reporteCasosQry;
+		List<ReporteCasoSecretarioDTO> reporteCasoSecretarioDTO = new ArrayList<>();
+		
+		String nombreAuxiliar = "(select stuff((select ', ' + concat (pe.primer_nombre_o_razon_social, ' ', pe.segundo_nombre, ' ', pe.primer_apellido, ' ', pe.segundo_apellido) "
+				+" from ROL_PERSONA_CASO rp "
+				+" left join PERSONA pe on rp.id_persona=pe.id_persona " 
+				+" where rp.id_caso = c.id_caso "
+				+" and rp.estado_registro = ?1 " 
+				+" and rp.estado = ?2 "	
+				+" and rp.id_rol = (SELECT id_rol FROM ROL WHERE nombre = ?16 ) for xml path('')), 1, 1, '')) as nombreAuxiliar, ";
+		
+		String diasSuspension = "(SELECT SUM (DATEDIFF(day,s.fecha_inicial,isnull(s.fecha_final,SYSDATETIME()))) "
+				+ " FROM SUSPENSION  s WHERE id_caso = c.id_caso AND estado_registro = ?1 "
+				+ " AND tipo IN ( ?3 , ?4 )) AS diasSuspension, ";
+		
+		String diasInterrupacion = "(SELECT SUM (DATEDIFF(day,s.fecha_inicial,isnull(s.fecha_final,SYSDATETIME()))) "
+				+ " FROM SUSPENSION  s WHERE id_caso = c.id_caso AND tipo = ?5 AND estado_registro = ?1 ) AS diasInterrupcion, ";
+		
+		StringBuilder jpqlQuery = new StringBuilder();
+		
+
+		jpqlQuery.append(" SELECT ");
+		jpqlQuery.append(" c.id_caso AS codigoCaso, ");
+		jpqlQuery.append(" c.nombre AS nombreCaso, ");
+		jpqlQuery.append(" c.fecha_radicacion AS fechaCaso, ");
+		jpqlQuery.append(" (SELECT nombre FROM DOMINIO WHERE  codigo = c.etapa AND dominio = ?6 ) AS etapa, ");
+		jpqlQuery.append(" DATEDIFF(day,c.fecha_radicacion, SYSDATETIME()) AS diasTranscurridos,  ");
+		jpqlQuery.append(diasSuspension);
+		jpqlQuery.append(diasInterrupacion);
+		jpqlQuery.append(nombreAuxiliar);
+		jpqlQuery.append(" (SELECT nombre FROM DOMINIO WHERE codigo = c.estado_caso AND dominio = ?7 ) AS estado,  ");
+		jpqlQuery.append(" c.dias_para_proferir_laudo AS diasProferirLaudo ");
+		jpqlQuery.append(" FROM CASO c  ");
+		jpqlQuery.append(" LEFT JOIN  ROL_PERSONA_CASO rpc ON c.id_caso = rpc.id_Caso  ");
+		jpqlQuery.append(" WHERE rpc.id_rol = (SELECT id_rol FROM ROL WHERE nombre= ?8 )  ");
+		jpqlQuery.append(" AND rpc.id_persona = (SELECT id_persona FROM USUARIO WHERE usuario_login = ?9 )   ");
+		jpqlQuery.append(" AND rpc.estado_registro = ?1 ");		
+		jpqlQuery.append(" AND rpc.estado IN ( ?10 , ?11 ) ");
+		jpqlQuery.append(" AND c.estado_registro = ?1 ");
+		jpqlQuery.append(" AND c.estado_caso != ?17 ");
+    	if(idCaso != null && idCaso > 0)
+    		jpqlQuery.append(" AND c.id_caso = ?12  ");
+    	
+    	if(fechaInicial != null && fechaFinal != null)
+    		jpqlQuery.append("AND c.fecha_radicacion BETWEEN  ?13 AND ?14 ");  
+	    	
+    	
+		if(nombreCaso != null && !nombreCaso.equals(""))
+			jpqlQuery.append(" AND  LOWER(c.nombre) like ?15 ");
+			
+		
+		jpqlQuery.append(" ORDER BY c.id_caso ASC  ");
+		
+		Query query = em.createNativeQuery(jpqlQuery.toString(),ReporteCasoSecretarioDTO.class);
+		
+		
+		query.setParameter(1, UtilDominios.ESTADO_REGISTRO_ACTIVO);
+		query.setParameter(2, UtilDominios.ESTADO_ROL_PERSONA_CASO_ASIGNADO);
+		query.setParameter(3, UtilDominios.TIPO_SUSPENSION_SUSPENSION_ARBITRAL);
+		query.setParameter(4, UtilDominios.TIPO_SUSPENSION_SUSPENSION_PREARBITRAL);
+		query.setParameter(5, UtilDominios.TIPO_SUSPENSION_INTERRUPCION);
+		query.setParameter(6, UtilDominios.DOMINIO_ETAPA_CASO);
+		query.setParameter(7, UtilDominios.DOMINIO_ESTADO_CASO);
+		query.setParameter(8, UtilDominios.ROL_PERSONA_SECRETARIO_DE_TRIBUNAL);
+		query.setParameter(9, usuarioSesion);
+		query.setParameter(10, UtilDominios.ESTADO_ROL_PERSONA_CASO_ACEPTADO);
+		query.setParameter(11, UtilDominios.ESTADO_ROL_PERSONA_CASO_POR_ACEPTAR);
+		query.setParameter(12, idCaso);
+		if(fechaInicial != null && fechaFinal != null ){
+			query.setParameter(13, dateFormat.format(fechaInicioDia));
+			query.setParameter(14, dateFormat.format(fechaFinDia));
+		}
+
+
+		query.setParameter(15, "%" + nombreCaso.toLowerCase().replaceAll("\\s", "") + "%");
+		query.setParameter(16, UtilDominios.ROL_PERSONA_AUXILIAR_ADM);
+		query.setParameter(17, UtilConstantes.ESTADO_CASO_EN_CREACION);
+
+	
+		reporteCasosQry = query.getResultList();	
+		for (ReporteCasoSecretarioDTO reporteFor : reporteCasosQry) {
+			Integer diasParaProferirLaudo;
+			Date fechaLimite = fechaCasoFacade.calcularFechaLimiteParaCierreDeCaso(reporteFor.getCodigoCaso().longValue());
+    		if(fechaLimite != null){
+    			try{
+    				diasParaProferirLaudo = reporteFor.getDiasProferirLaudo() == null?0:Integer.valueOf(reporteFor.getDiasProferirLaudo().intValue());	
+    			}catch(Exception e){
+    				diasParaProferirLaudo =0;
+    			}
+    			reporteFor.setFechaCierre(fechaLimite);
+	    		reporteFor.setFechaLaudo(UtilOperaciones.adicionarDiasFecha(fechaLimite,diasParaProferirLaudo*-1));
+    		}else{
+    			reporteFor.setFechaCierre(null);
+    			reporteFor.setFechaLaudo(null);
+    		}    		
+
+    		if( reporteFor.getFechaCierre() != null){
+    			Long diasFaltantes = ( reporteFor.getFechaCierre().getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
+    			reporteFor.setDiasFaltantes(diasFaltantes.toString());
+    		}
+    		
+    		if(reporteFor.getDiasSuspension() == null)
+    			reporteFor.setDiasSuspension(new BigDecimal(0));
+    		
+    		if(reporteFor.getDiasInterrupcion() == null)
+    			reporteFor.setDiasInterrupcion(new BigDecimal(0));
+    		
+    		if(reporteFor.getDiasTranscurridos() == null)
+    			reporteFor.setDiasTranscurridos(new BigDecimal(0));
+
+ 	
+    		reporteCasoSecretarioDTO.add(reporteFor);
+			
+		}
+		
+		return reporteCasoSecretarioDTO;	
+	
+	}	
+	
+	/**
+	 * Metodo encargado de consultar casos dependiendo de los parametros definidos por
+	 * el usuario, entre ellos el tipo de la cuantía
+	 * 
+	 * @param fechaInicial	Fecha radicación del caso
+	 * @param fechaFinal	Fecha radicación del caso
+	 * @param tipoCaso	Servicio del caso
+	 * @param tipoCuantia	Mayor, Menor o indeterminada
+	 * @return List<ReporteCasoCuantiaDTO>
+	 */
+	@SuppressWarnings("unchecked")
+	public List<ReporteCasoCuantiaDTO> getReporteCasoCuantia(Date fechaInicial, Date fechaFinal, Long tipoCaso,
+			String tipoCuantia) {
+		
+		List<Object[]> rows=new ArrayList<>();		
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		List<ReporteCasoCuantiaDTO> reporteCasoCuantiaDTOs = new ArrayList<ReporteCasoCuantiaDTO>(rows.size());
+		
+		StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append("SELECT c.nombre, c.fechaRadicacion, s.nombre, m.nombre, c.tipoCuantia, c.valorPretensiones FROM Caso c ");
+		jpqlQuery.append("INNER JOIN c.servicioMateria csm ");
+		jpqlQuery.append("INNER JOIN csm.servicio s ");
+		jpqlQuery.append("INNER JOIN csm.materia m ");
+		jpqlQuery.append("WHERE c.estadoCaso <> : estado ");
+		jpqlQuery.append("AND c.estadoRegistro = ").append(conComillasSimples(UtilDominios.ESTADO_REGISTRO_ACTIVO));
+		jpqlQuery.append("AND c.fechaRadicacion BETWEEN '"+
+						dateFormat.format(UtilOperaciones.obtenerFechaComienzoDelDia(fechaInicial))+
+						"' AND '"+
+						dateFormat.format(UtilOperaciones.obtenerFechaFinDelDia(fechaFinal))+"' ");
+				
+		if(tipoCaso > 0L)
+			jpqlQuery.append("AND c.idServicio = :tipoCaso ");
+		
+		if(!tipoCuantia.equals("TODOS"))
+			jpqlQuery.append("AND c.tipoCuantia = :cuantia ");
+		
+		jpqlQuery.append("ORDER BY c.idCaso ");
+		
+		Query query = em.createQuery(jpqlQuery.toString());
+		
+		query.setParameter("estado", UtilConstantes.ESTADO_CASO_EN_CREACION);
+		if(tipoCaso > 0L)
+			query.setParameter("tipoCaso", tipoCaso);
+		
+		if(!tipoCuantia.equals("TODOS"))
+			query.setParameter("cuantia", tipoCuantia);
+		
+		rows = query.getResultList(); 
+		
+		for(Object[] row : rows){	
+			ReporteCasoCuantiaDTO reporte = new ReporteCasoCuantiaDTO();
+			reporte.setNombreCaso((String) row[0]);
+			reporte.setFechaCaso((Date) row[1]);
+			reporte.setTipoCaso((String) row[2]);
+			reporte.setMateria((String) row[3]);
+			String tipoCuantiaReporte = "";
+			if (row[4] != null)
+				tipoCuantiaReporte = UtilDominios.TIPO_CUANTIA_MAYOR.equals(row[4].toString()) ? "Mayor" : "Menor";
+			
+			reporte.setTipoCuantia(tipoCuantiaReporte);			
+			reporte.setValorPretension((String)row[5]);
+			reporteCasoCuantiaDTOs.add(reporte);
+    	}
+		return reporteCasoCuantiaDTOs;
+	}	
+	
+	/**
+	 * Metodo encargado de generar el reporte de 
+	 * los casos que han sido sorteados 
+	 * @param filtros
+	 * @return List<ReporteCasosSorteadosDTO>
+	 */	
+    @SuppressWarnings("unchecked")	
+	public List<ReporteCasosSorteadosDTO> getReporteCasosSorteados(Date fechaInicial, Date fechaFinal, Long tipoCaso) {
+    	List<ReporteCasosSorteadosDTO> casosSorteados = new ArrayList<ReporteCasosSorteadosDTO>();
+    	
+    	List<Sorteo> sorteos = manejadorSorteo.consultarSorteosRealizados(fechaInicial, fechaFinal, tipoCaso);
+    	
+    	for (Sorteo sorteo : sorteos) {
+    		Caso caso = sorteo.getCaso();
+    		if (caso != null) {
+    			ReporteCasosSorteadosDTO reporteDto = new ReporteCasosSorteadosDTO();
+    			reporteDto.setIdCaso(caso.getIdCaso());
+    			reporteDto.setNombreCaso(caso.getNombre());
+	            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");	            
+        		reporteDto.setFechaSorteo(sorteo.getFechaRealizacion() != null ? 
+        				dateFormat.format(sorteo.getFechaRealizacion()) : null);
+        		reporteDto.setTipoCaso(caso.getServicioMateria().getServicio().getNombre());
+        		reporteDto.setMateria(caso.getServicioMateria().getMateria().getNombre());
+        		reporteDto.setValorPretensiones(caso.getValorPretensiones());
+        		reporteDto.setTipoCuantia(sorteo.getTipoCuantia());        		        
+        		//se filtran los arbitros a mostrar
+        		List<RolPersonaCaso> arbitrosSelec = obtenerArbitrosSorteoCaso(sorteo, caso);
+        		
+				reporteDto.setArbitros(arbitrosSelec);
+        		reporteDto.setPreseleccion(caso.getPreseleccion());
+        		casosSorteados.add(reporteDto);
+    		}    		
+    	}
+		return casosSorteados;
+	}
+
+	/**
+	 * Metodo encargado de consultar casos dependiendo de las partes implicadas
+	 * @param fechaInicial	fecha de radicación del caso
+	 * @param fechaFinal	fecha de radicación del caso
+	 * @param rol	Rol de la parte
+	 * @return List<ReporteCasoParteDTO>
+	 */
+	@SuppressWarnings("unchecked")
+	public List<ReporteCasoParteDTO> getReporteCasoParte(Date fechaInicial, Date fechaFinal, String rol, String primerNombre, String primerApellido) {
+		
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		Date fechaInicioDia = UtilOperaciones.obtenerFechaComienzoDelDia(fechaInicial);
+		Date fechaFinDia = UtilOperaciones.obtenerFechaFinDelDia(fechaFinal);
+		
+		StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append(" SELECT ");
+		jpqlQuery.append(" ca.id_caso AS codigoCaso,");
+		jpqlQuery.append(" ca.nombre AS nombreCaso,");
+		jpqlQuery.append(" ca.fecha_radicacion AS fechaRadicacion,");
+		jpqlQuery.append(" (select nombre from DOMINIO WHERE dominio = ?2 AND codigo IN(ca.tipo_cuantia)) AS tipoCuantia,");
+		jpqlQuery.append(" ca.valor_pretensiones AS valorPretension,");
+		jpqlQuery.append(" (SELECT descripcion from dominio where dominio = ?3 and codigo in (select nombre from rol where id_rol = rpc.id_rol)) as rol,");
+		jpqlQuery.append(" (SELECT nombre FROM DOMINIO WHERE dominio = ?8 AND codigo IN (per.tipo_de_empresa)) AS tipoEmpresa,");
+		jpqlQuery.append(" (SELECT nombre FROM DOMINIO WHERE dominio = ?9 AND codigo IN (per.tipo_persona))  AS tipoPersona,");
+		jpqlQuery.append(" (SELECT nombre FROM DOMINIO WHERE dominio = ?10 AND codigo IN (per.tipo_documento))  AS tipoIdentificacion,");
+		jpqlQuery.append(" per.numero_documento AS numeroIdentificacion,");
+		jpqlQuery.append(" per.numero_tarjeta_profesional AS tarjetaProfesional,");
+		jpqlQuery.append(" CONCAT(per.primer_nombre_o_razon_social, ' ' ,per.segundo_nombre, ' ' , per.primer_apellido, ' ' , per.segundo_apellido) AS nombre,");
+		jpqlQuery.append(" (SELECT STUFF ((select ' ' + direccion FROM UBICACION WHERE id_persona IN (per.id_persona) AND estado_registro = ?4 FOR XML PATH('')), 1, 1, '')) AS direccion,");
+		jpqlQuery.append(" (SELECT STUFF ((select ' ' + (SELECT NOMBRE FROM ZONA_GEOGRAFICA  WHERE estado_registro = ?4 AND id_zona_geografica = U.id_zona_geografica) FROM UBICACION U WHERE id_persona IN (per.id_persona) AND estado_registro = ?4 FOR XML PATH('')), 1, 1, '')) AS ciudad,");
+		jpqlQuery.append(" (select stuff((select ' ' + numero from TELEFONO where id_persona=per.id_persona and estado_registro= ?4 AND tipo_telefono != ?5 for xml path('')), 1, 1, '')) as telefono_uno,");
+		jpqlQuery.append(" (select stuff((select ' ' + numero from TELEFONO where id_persona=per.id_persona and estado_registro= ?4 AND tipo_telefono = ?5 for xml path('')), 1, 1, '')) as fax,");
+		jpqlQuery.append(" (select stuff((select ' ' + direccion from CORREO_ELECTRONICO where id_persona=per.id_persona and estado_registro= ?4  for xml path('')), 1, 1, '')) as correo_uno");
+		jpqlQuery.append(" from ROL_PERSONA_CASO rpc");
+		jpqlQuery.append(" LEFT JOIN CASO ca on rpc.id_caso = ca.id_caso");
+		jpqlQuery.append(" LEFT JOIN PERSONA per on rpc.id_persona = per.id_persona");
+		jpqlQuery.append(" LEFT JOIN ROL r on rpc.id_rol = r.id_rol");
+		jpqlQuery.append(" where ca.fecha_radicacion between ?6 and ?7 ");
+		jpqlQuery.append(" AND ca.estado_caso !=  ?11 ");
+		jpqlQuery.append(" AND rpc.estado_registro = ?4 ");
+		jpqlQuery.append(" AND ca.estado_registro =  ?4 ");
+		jpqlQuery.append(" AND per.estado_registro = ?4 ");
+		jpqlQuery.append(" AND r.estado_registro =   ?4 ");
+		if(rol.equals("TODOS")){
+			jpqlQuery.append("AND (r.nombre = ").append(conComillasSimples(UtilDominios.ROL_PERSONA_APODERADO_DEMANDADO));
+			jpqlQuery.append(" OR r.nombre = ").append(conComillasSimples(UtilDominios.ROL_PERSONA_APODERADO_DEMANDANTE));
+			jpqlQuery.append(" OR r.nombre = ").append(conComillasSimples(UtilDominios.ROL_PERSONA_PARTE_DEMANDANTE));
+			jpqlQuery.append(" OR r.nombre = ").append(conComillasSimples(UtilDominios.ROL_PERSONA_PARTE_DEMANDADA));
+			jpqlQuery.append(" ) ");
+		}else{
+			jpqlQuery.append("AND r.nombre = ?1 ");	
+		}
+		
+		if(primerNombre != null && !primerNombre.equals("")){
+			jpqlQuery.append("AND LOWER(per.primer_nombre_o_razon_social) like'%"+primerNombre+"%' ");
+		}
+		if(primerApellido != null && !primerApellido.equals("")){
+			jpqlQuery.append("AND LOWER(per.primer_apellido) like'%"+primerApellido+"%' ");
+		}
+
+		jpqlQuery.append(" ORDER BY ca.fecha_radicacion desc");
+		
+
+
+		Query query = em.createNativeQuery(jpqlQuery.toString(),ReporteCasoParteDTO.class);
+		if(!rol.equals("TODOS"))
+			query.setParameter(1, rol);
+		
+		query.setParameter(2, UtilDominios.DOMINIO_TIPO_CUANTIA);
+		query.setParameter(3, UtilDominios.DOMINIO_ROL_PERSONA);
+		query.setParameter(4, UtilDominios.ESTADO_REGISTRO_ACTIVO);
+		query.setParameter(5, UtilDominios.TIPO_TELEFONO_FAX);
+		query.setParameter(6, dateFormat.format(fechaInicioDia));
+		query.setParameter(7, dateFormat.format(fechaFinDia));
+		query.setParameter(8, UtilDominios.DOMINIO_TIPO_EMPRESA);
+		query.setParameter(9, UtilDominios.DOMINIO_TIPO_PERSONA);
+		query.setParameter(10, UtilDominios.DOMINIO_TIPO_DOCUMENTO_PERSONA);
+		query.setParameter(11, UtilConstantes.ESTADO_CASO_EN_CREACION);
+			
+		return query.getResultList();
+	}
+	
+	/**
+	 * Metodo encargado de generar el reporte de 
+	 * los casos casos pendientes por sorteo público de designación, estado PEN
+	 * @param filtros
+	 * @return List<ReporteCasosPendientesSorteoPublicoDesignacionDTO>
+	 */	
+    @SuppressWarnings("unchecked")	
+	public List<ReporteCasosPendientesSorteoPublicoDesignacionDTO> getReporteCasosPendientesSorteoPublicoDesignacion() {					
+		StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append("SELECT ca.id_caso AS codigoCaso, ");
+		jpqlQuery.append("ca.nombre AS nombreCaso, ");
+		jpqlQuery.append("ca.tipo_cuantia AS tipoCuantia, ");
+		jpqlQuery.append("ca.valor_pretensiones AS valorPretensiones, ");
+		jpqlQuery.append("ser.nombre AS tipoServicio, ");
+		jpqlQuery.append("ma.nombre AS materia, ");
+		jpqlQuery.append("au.hora_inicio AS fechaSorteo, ");
+		jpqlQuery.append("np.cant_funcionarios_principales AS arbitrosPrincipales, ");
+		jpqlQuery.append("np.cant_funcionarios_suplentes AS arbitrosSuplentes, ");
+		jpqlQuery.append("ca.preseleccion AS preseleccionData ");
+		jpqlQuery.append("FROM AUDIENCIA au ");
+		jpqlQuery.append("INNER JOIN CASO ca ON au.id_caso = ca.id_caso ");
+		jpqlQuery.append("INNER JOIN SERVICIO ser ON ca.id_servicio = ser.id_servicio ");
+		jpqlQuery.append("INNER JOIN MATERIA ma ON ca.id_materia = ma.id_materia ");
+		jpqlQuery.append("INNER JOIN NOMBRAMIENTO_PERSONA np ON ca.id_caso = np.id_caso ");
+		jpqlQuery.append("AND np.metodo_de_nombramiento = '" + UtilDominios.NOMBRAMIENTO_POR_LA_CCB + "' ");
+		jpqlQuery.append("AND np.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("WHERE au.estado = '" + UtilDominios.ESTADO_AUDIENCIA_PENDIENTE + "' ");
+		jpqlQuery.append("AND au.tipo_audiencia = '" + UtilDominios.TIPO_AUDIENCIA_DE_SORTEO_PUBLICO_DE_DESIGNACION + "' ");
+		jpqlQuery.append("AND au.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("AND au.id_sorteo is null ");
+		jpqlQuery.append("ORDER BY au.hora_inicio ");
+		
+		Query query = em.createNativeQuery(jpqlQuery.toString(), ReporteCasosPendientesSorteoPublicoDesignacionDTO.class);		
+		return query.getResultList();
+	}
+    
+    /**Genera datos para el reporte de reparto por abogado, muestra datos del caso y del abogado designado
+	 * @param filtros
+	 * @return List<ReporteRepartoPorAbogadoDTO>
+	 */	    
+    public List<ReporteRepartoPorAbogadoDTO> getReporteRepartoPorAbogado(Map filtros){
+		String abogado = filtros.get("abogado").toString();
+		Date fechaIni = (Date)filtros.get("fechaIni");
+		Date fechaFin = (Date)filtros.get("fechaFin");
+		int diasHabiles = (int)filtros.get("diasHabiles");
+		
+		StringBuilder jpqlQuery = new StringBuilder(); 
+	
+		jpqlQuery.append(" SELECT c.idCaso,");
+		jpqlQuery.append("  c.nombre,");
+		jpqlQuery.append("  c.estadoCaso,");
+		jpqlQuery.append("  c.fechaRadicacion,");
+		jpqlQuery.append("  rpc.fechaDeAsignacion,");
+		jpqlQuery.append("  a.horaInicio,");	
+		jpqlQuery.append("  p.primerNombreORazonSocial,");
+		jpqlQuery.append("  p.primerApellido ");
+		jpqlQuery.append(" FROM EventoRolPersonaCaso rpc");
+		jpqlQuery.append(" LEFT JOIN rpc.rolPersonaCaso.rol r");
+		jpqlQuery.append(" LEFT JOIN rpc.rolPersonaCaso.persona p");
+		jpqlQuery.append(" LEFT JOIN rpc.rolPersonaCaso.caso c");
+		jpqlQuery.append(" LEFT JOIN c.audienciaList a");
+		
+		jpqlQuery.append(" WHERE ");
+		
+		jpqlQuery.append(" r.nombre = :nombre_rol AND");
+		jpqlQuery.append(" c.fechaRadicacion BETWEEN :fechaIni AND :fechaFin AND");
+		jpqlQuery.append(" a.tipoAudiencia = :tipoAudiencia AND");
+		
+		if(!abogado.equals("0"))
+			jpqlQuery.append(" p.idPersona = :abogado AND");
+		
+		jpqlQuery.delete(jpqlQuery.length()-4, jpqlQuery.length());
+		jpqlQuery.append(" ORDER BY c.idCaso ASC ");
+		
+		Query query = em.createQuery(jpqlQuery.toString());
+		
+		query.setParameter("nombre_rol", com.ccb.simasc.transversal.utilidades.UtilDominios.ROL_PERSONA_ABOGADO);
+		query.setParameter("fechaIni",new Date(fechaIni.getTime()));
+		query.setParameter("fechaFin",new Date(fechaFin.getTime()));
+		query.setParameter("tipoAudiencia", com.ccb.simasc.transversal.utilidades.UtilDominios.TIPO_AUDIENCIA_AUDIENCIA_DE_INSTALACION);
+		
+		if(!abogado.equals("0"))
+			query.setParameter("abogado",Long.valueOf(abogado));
+		
+		List<Object[]> listObj = query.getResultList();
+		
+		List<ReporteRepartoPorAbogadoDTO> resultado = new ArrayList<>();	
+
+		for (Object[] campo : listObj) {
+			ReporteRepartoPorAbogadoDTO repartoAbogadoDTO = new ReporteRepartoPorAbogadoDTO();			
+			repartoAbogadoDTO.setCodigoCaso(campo[0].toString());
+			repartoAbogadoDTO.setNombreCaso(nvl(campo[1],"").toString());
+			repartoAbogadoDTO.setEstadoCaso(campo[2]==null?"":fachadaDominios.getNombreDominio(UtilDominios.DOMINIO_ESTADO_CASO,campo[2].toString()));
+			repartoAbogadoDTO.setFechaRadicacionCaso(campo[3] == null?"":formatearFechaReporte((Date)campo[3]));
+			repartoAbogadoDTO.setFechaAudienciaDesignacion(campo[4] == null?"":formatearFechaReporte((Date)campo[4]));
+			if(campo[3] != null && campo[4]!=null){
+				repartoAbogadoDTO.setNumeroDiasRadicacionDesignacion(String.valueOf(obtenerDiasHabilesEntreFechas(((Date)campo[3]), ((Date)campo[4]))));
+				repartoAbogadoDTO.setIndicadorCumplimiento((obtenerDiasHabilesEntreFechas(((Date)campo[3]), ((Date)campo[4]))<=diasHabiles)?"SI":"NO");
+			}else{
+				repartoAbogadoDTO.setNumeroDiasRadicacionDesignacion("");
+				repartoAbogadoDTO.setIndicadorCumplimiento("");
+			}
+			repartoAbogadoDTO.setFechaAudienciaInstalacion(campo[5] == null?"":formatearFechaReporte((Date)campo[5]));
+			repartoAbogadoDTO.setNombreAbogado(nvl(campo[6],"").toString() + " " + nvl(campo[7],"").toString());
+			resultado.add(repartoAbogadoDTO);			
+		} 
+		return resultado;
+	}
+    
+    /**Genera datos para el reporte de aspirantes, los resultados los realiza agrupando por lista, mostrando los requisitosPersona que se 
+     * cumplen en cada RequisitoLista
+	 
+	 * @return List<ReporteAspirantesDTO>
+	 */	 
+    public List<ReporteAspirantesDTO> getDatosReporteAspirantes(){
+    	
+  		StringBuilder jpqlQuery = new StringBuilder();
+  		jpqlQuery.append(" SELECT COUNT(rp.requisito.idRequisito),");
+  		jpqlQuery.append("  p.numeroDocumento,");
+  		jpqlQuery.append("  p.primerNombreORazonSocial,");
+  		jpqlQuery.append("  p.segundoNombre,");
+  		jpqlQuery.append("  p.primerApellido,");
+  		jpqlQuery.append("  p.segundoApellido, ");
+  		jpqlQuery.append("  rl.lista.idLista ");
+  		jpqlQuery.append(" FROM RequisitoPersona rp, RequisitoLista rl, Persona p ");
+  		jpqlQuery.append(" WHERE ");
+  		jpqlQuery.append(" rp.requisito.idRequisito = rl.requisito.idRequisito AND");
+  		jpqlQuery.append(" rp.persona.idPersona = p.idPersona AND");
+  		
+  		// ******************** Estado de los registros ***********
+  		jpqlQuery.append(" p.estadoRegistro = :estadoRegistro AND");
+  		jpqlQuery.append(" rp.estadoRegistro = :estadoRegistro AND");
+  		jpqlQuery.append(" rl.estadoRegistro = :estadoRegistro ");
+  		// *********************************************************
+  		
+  		jpqlQuery.append(" GROUP BY p.numeroDocumento,p.primerNombreORazonSocial,p.segundoNombre,p.primerApellido,p.segundoApellido,rl.lista.idLista ");
+  		jpqlQuery.append(" ORDER BY p.primerNombreORazonSocial ");	
+  		
+  		
+  		Query query = em.createQuery(jpqlQuery.toString());
+  		
+  		query.setParameter("estadoRegistro", com.ccb.simasc.transversal.utilidades.UtilDominios.ESTADO_REGISTRO_ACTIVO);
+  		
+  		
+  		List<Object[]> listObj = query.getResultList();
+  		List<ReporteAspirantesDTO> resultado = new ArrayList<>();	
+
+  		for (Object[] campo : listObj) {
+  			ReporteAspirantesDTO aspiranteDTO = new ReporteAspirantesDTO();			
+  			aspiranteDTO.setIdentificacion((nvl(campo[1],"").toString()));
+  			aspiranteDTO.setNombres(nvl(campo[2].toString(),"") + " " + nvl(campo[3].toString(),"") + " " + nvl(campo[4].toString(),"") + " " + nvl(campo[5].toString(),""));
+  			aspiranteDTO.setReqCumplidos((nvl(campo[0],"").toString()));
+  			if(campo[0]!=null && campo[6]!=null){
+  				aspiranteDTO.setReqNoCumplidos(String.valueOf((long)requisitoFacade.getRequisitos(campo[6].toString()) - (long)campo[0]));				
+  			}else{
+  				aspiranteDTO.setReqNoCumplidos("");
+  			}
+  			resultado.add(aspiranteDTO);
+  		} 
+  		return resultado;
+  	}
+    
+    
+    /**
+	 * Metodo encargado de generar el reporte de los arbitros
+	 * disponibles para sorteo 
+	 * @param filtros
+	 * @return List<ReporteArbitrosDispSorteoDTO>
+	 */	
+    @SuppressWarnings("unchecked")
+    public List<ReporteArbitrosDispSorteoDTO> getReporteArbitrosDisponiblesSorteo(Map filtros) {
+    	
+    	String tipoCaso = (String) filtros.get("tipoCaso");
+    	String codigo   = (String) filtros.get("codigo");
+    	String dominio  = (String) filtros.get("dominio");
+    	String materia  = (String) filtros.get("materia");
+
+ 		Long servicio = null;
+ 		Long idMateria = null;
+		if(codigo != null && (codigo.equals(UtilDominios.TIPO_CUANTIA_MAYOR) || 
+				codigo.equals(UtilDominios.TIPO_CUANTIA_INDETERMINADO))) {
+			dominio = UtilDominios.TIPO_LISTA_A;
+		} else if(null!=codigo && codigo.equals(UtilDominios.TIPO_CUANTIA_MENOR)) {
+			dominio = UtilDominios.TIPO_LISTA_B;
+		} 		
+		if(tipoCaso != null) {
+			servicio = new Long(tipoCaso);
+		}
+		if(materia != null) {
+			idMateria = new Long(materia);
+		}
+				
+		StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append("SELECT DISTINCT ISNULL(per.primer_nombre_o_razon_social, '') as primerNombre, ");
+		jpqlQuery.append("ISNULL(per.segundo_nombre, '') as segundoNombre, ");
+		jpqlQuery.append("ISNULL(per.primer_apellido, '') as primerApellido, ");
+		jpqlQuery.append("ISNULL(per.segundo_apellido, '') as segundoApellido, ");
+		jpqlQuery.append("(SELECT nombre FROM materia WHERE id_materia = psm.id_materia) as materia, ");
+		jpqlQuery.append("(SELECT nombre FROM lista WHERE id_lista = rp.id_lista) as lista ");
+		jpqlQuery.append("FROM PERSONA per ");
+		jpqlQuery.append("INNER JOIN ROL_PERSONA rp ON per.id_persona = rp.id_persona ");
+		jpqlQuery.append("AND rp.fecha_fin_vigencia is null ");
+		jpqlQuery.append("AND rp.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("AND per.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("AND per.estado_persona = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");		
+		if (codigo != null) {
+			jpqlQuery.append("INNER JOIN LISTA ls ON ls.id_lista = rp.id_lista ");
+		}		
+		jpqlQuery.append("INNER JOIN ROL rol ON rp.id_rol = rol.id_rol ");
+		jpqlQuery.append("AND rol.nombre IN (select rl.nombre from PARAMETRO_SERVICIO_SORTEO pss inner join ROL rl on pss.id_rol = rl.id_rol where pss.id_servicio = " + servicio + ") ");
+		jpqlQuery.append("INNER JOIN PERSONA_SERVICIO_MATERIA psm ON per.id_persona = psm.id_persona ");		
+		if (idMateria != null) {
+			jpqlQuery.append("INNER JOIN MATERIA ma ON psm.id_materia = ma.id_materia ");
+		}
+		jpqlQuery.append("INNER JOIN ESTADO_PERSONA_TIPO_SERVICIO ep on per.id_persona = ep.id_persona ");
+		jpqlQuery.append("AND psm.fecha_fin_de_vigencia is null ");
+		jpqlQuery.append("AND ep.estado = '" + UtilDominios.ESTADO_ARBITROS_HABILITADO + "' ");
+		jpqlQuery.append("WHERE psm.id_servicio = " + servicio + " ");
+		jpqlQuery.append("AND psm.estado_para_sorteo = '" + UtilDominios.ESTADO_PERSONA_SORTEO_ACTIVO + "' ");
+		if (idMateria != null) {
+			jpqlQuery.append("AND psm.id_materia = " + idMateria + " ");
+		}
+		if (codigo != null) {
+			jpqlQuery.append("AND ls.nombre = '" + dominio + "' ");
+		}
+		Query q = em.createNativeQuery(jpqlQuery.toString(), ReporteArbitrosDispSorteoDTO.class);  		 		
+ 		return q.getResultList();
+ 	}
+    
+
+    /**
+	 * Metodo encargado de generar el reporte del promedio
+	 * de los minutos de las transcripciones por auxiliar 
+	 * @param filtros
+	 * @return List<ReporteAuxiliarPromedioTranscripcionDTO>
+	 */	    
+	@SuppressWarnings("unchecked")
+	public List<ReporteAuxiliarPromedioTranscripcionDTO> getReporteAuxiliarPromedioTranscripciones(Map filtros) {
+		List<ReporteAuxiliarPromedioTranscripcionDTO> reporteAuxiliarPromedioTranscripcionDTOs = new ArrayList<ReporteAuxiliarPromedioTranscripcionDTO>();
+		DateFormat dateFormat = new SimpleDateFormat(UtilConstantes.FORMATO_FECHA_ANIO_MES_DIA);
+		String fechaIncial = (String) filtros.get("fechaInicial");
+		String fechaHoraIncial = fechaIncial + UtilConstantes.CARACTER_ESPACIO + UtilConstantes.FORMATO_HORA_INICIO;
+		String fechaFinal = (String) filtros.get("fechaFinal");
+		String fechaHoraFinal = fechaFinal + UtilConstantes.CARACTER_ESPACIO + UtilConstantes.FORMATO_HORA_FIN;
+		String idPersona = (String) filtros.get("idPersona");
+
+		StringBuilder nativeQuery = new StringBuilder();
+		nativeQuery.append("SELECT ");
+		nativeQuery.append(
+				"  CONCAT(p.primer_nombre_o_razon_social, ' ', p.segundo_nombre, ' ', p.primer_apellido, ' ', p.segundo_apellido) nombre_auxiliar, "); // 0
+		nativeQuery.append("  COUNT(d.id_audiencia) numero_audiencias, "); // 1
+		nativeQuery.append("  SUM(t.tiempo_transcrito) tiempo_transcrito "); // 2
+		nativeQuery.append("FROM TRANSCRIPCION t ");
+		nativeQuery.append("JOIN DOCUMENTO d ");
+		nativeQuery.append("  ON t.id_doc_audio_fuente = d.id_documento ");
+		nativeQuery.append("  AND d.tipo_documento = '" + UtilDominios.TIPO_DOCUMENTO_DIG_AUDIO + "' ");
+		nativeQuery.append("  AND d.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		nativeQuery.append("JOIN AUDIENCIA a ");
+		nativeQuery.append("  ON d.id_audiencia = a.id_audiencia ");
+		nativeQuery.append("  AND a.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		nativeQuery.append("JOIN CASO c ");
+		nativeQuery.append("  ON a.id_caso = c.id_caso ");
+		nativeQuery.append("  AND c.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		nativeQuery.append("JOIN PERSONA p ");
+		nativeQuery.append("  ON t.id_persona = p.id_persona ");
+		nativeQuery.append("  AND p.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		nativeQuery.append("  AND p.estado_persona = '" + UtilDominios.ESTADO_PERSONA_ACTIVO + "' ");
+		nativeQuery.append("JOIN ROL_PERSONA rp ");
+		nativeQuery.append("  ON p.id_persona = rp.id_persona ");
+		nativeQuery.append("  AND rp.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		nativeQuery.append("  AND rp.id_rol = (SELECT ");
+		nativeQuery.append("    r.id_rol ");
+		nativeQuery.append("  FROM ROL r ");
+		nativeQuery.append("  WHERE r.nombre = '" + UtilDominios.ROL_PERSONA_AUXILIAR_ADM + "' ");
+		nativeQuery.append("  AND r.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "') ");
+		nativeQuery.append("WHERE t.fecha_entrega_transcripcion IS NOT NULL ");
+		nativeQuery.append("AND t.fecha_entrega_transcripcion BETWEEN ?1 AND ?2 ");
+
+		if (idPersona != null && !idPersona.equals("")) {
+			nativeQuery.append("AND t.id_persona = ?3 ");
+		}
+
+		nativeQuery.append("GROUP BY p.primer_nombre_o_razon_social, ");
+		nativeQuery.append("         p.segundo_nombre, ");
+		nativeQuery.append("         p.primer_apellido, ");
+		nativeQuery.append("         p.segundo_apellido ");
+
+		Query query = em.createNativeQuery(nativeQuery.toString());
+		query.setParameter(1, fechaHoraIncial);
+		query.setParameter(2, fechaHoraFinal);
+
+		if (idPersona != null && !idPersona.equals("")) {
+			query.setParameter(3, idPersona);
+		}
+
+		List<Object[]> objects = query.getResultList();
+
+		try {
+			Date initialDate = dateFormat.parse(fechaIncial);
+			Date finalDate = dateFormat.parse(fechaFinal);
+
+			int diasHabilesPeriodo = obtenerDiasHabilesEntreFechas(initialDate, finalDate);
+
+			for (Object[] object : objects) {
+				ReporteAuxiliarPromedioTranscripcionDTO auxiliarPromedioTranscripcionDTO = new ReporteAuxiliarPromedioTranscripcionDTO();
+				auxiliarPromedioTranscripcionDTO
+						.setNombreAuxiliar((String) nvl(object[0], UtilConstantes.CADENA_VACIA));
+				auxiliarPromedioTranscripcionDTO.setPeriodo(fechaIncial + " - " + fechaFinal);
+				auxiliarPromedioTranscripcionDTO.setNumeroAudienciasAtendidas(((Number) nvl(object[1], 0)).longValue());
+
+				if (object[2] != null) {
+					Double promedio = ((Number) object[2]).doubleValue() / diasHabilesPeriodo;
+					auxiliarPromedioTranscripcionDTO.setPromedioDiarioMinutos(formatearNumeroDecimal(promedio, 2));
+				}
+
+				reporteAuxiliarPromedioTranscripcionDTOs.add(auxiliarPromedioTranscripcionDTO);
+			}
+
+		} catch (ParseException e) {
+			throw new SimascException(EXCEPCION_CALCULO_DIAS_HABILES);
+		}
+
+		return reporteAuxiliarPromedioTranscripcionDTOs;
+	}
+	
+	
+	/**
+	 * Metodo encargado de generar el reporte de transcripciones de documentos,
+	 * con datos del caso, audiencia, documento y secretario del caso
+	 * 
+	 * @param filtros
+	 * @return List<ReporteTranscripcionesDTO>
+	 */
+	public List<ReporteTranscripcionesDTO> getReporteTranscripciones(Map filtros) {
+
+		String codigoCaso = nvl(filtros.get("codigoCaso"), "").toString();
+		String nombreCaso = nvl(filtros.get("nombreCaso"), "").toString();
+		Date fechaIni = filtros.get("fechaIni") == null ? null : (Date) filtros.get("fechaIni");
+		Date fechaFin = filtros.get("fechaFin") == null ? null : (Date) filtros.get("fechaFin");
+		String auxiliar = filtros.get("auxiliar").toString();
+
+		StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append("SELECT ");
+		jpqlQuery.append("  c.id_caso, "); // 0
+		jpqlQuery.append("  c.nombre, "); // 1
+		jpqlQuery.append(
+				"  concat(p_aux.primer_nombre_o_razon_social, ' ', p_aux.segundo_nombre, ' ', p_aux.primer_apellido, ' ', p_aux.segundo_apellido) auxiliar_caso, "); // 2
+		jpqlQuery.append("  (SELECT ");
+		jpqlQuery.append(
+				"    concat(p.primer_nombre_o_razon_social, ' ', p.segundo_nombre, ' ', p.primer_apellido, ' ', p.segundo_apellido) ");
+		jpqlQuery.append("  FROM ROL_PERSONA_CASO rpc ");
+		jpqlQuery.append("  JOIN ROL r ");
+		jpqlQuery.append("    ON rpc.id_rol = r.id_rol ");
+		jpqlQuery.append("  JOIN PERSONA p ");
+		jpqlQuery.append("    ON rpc.id_persona = p.id_persona ");
+		jpqlQuery.append("  WHERE rpc.id_caso = c.id_caso ");
+		jpqlQuery.append("  AND rpc.estado = '" + UtilDominios.ESTADO_ROL_PERSONA_CASO_ACEPTADO + "' ");
+		jpqlQuery.append("  AND rpc.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("  AND r.nombre = '" + UtilDominios.ROL_PERSONA_SECRETARIO_DE_TRIBUNAL + "' ");
+		jpqlQuery.append("  AND r.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("  AND p.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("  AND p.estado_persona = '" + UtilDominios.ESTADO_PERSONA_ACTIVO + "') ");
+		jpqlQuery.append("  secretario_caso, "); // 3
+		jpqlQuery.append("  (t.tiempo_final - t.tiempo_inicial - t.tiempo_transcrito) / 60 tiempo_pendiente_transcribir, "); // 4
+		jpqlQuery.append("  d.fecha_de_grabacion, "); // 5
+		jpqlQuery.append("  t.fecha_inicio_transcripcion, "); // 6
+		jpqlQuery.append("  t.fecha_entrega_transcripcion, "); // 7
+		jpqlQuery.append("  t.id_transcripcion, "); // 8
+		jpqlQuery.append("  (t.tiempo_final - t.tiempo_inicial) / 60 tiempo_a_transcribir "); // 9
+		jpqlQuery.append("FROM TRANSCRIPCION t ");
+		jpqlQuery.append("JOIN DOCUMENTO d ");
+		jpqlQuery.append("  ON t.id_doc_audio_fuente = d.id_documento ");
+		jpqlQuery.append("JOIN AUDIENCIA a ");
+		jpqlQuery.append("  ON d.id_audiencia = a.id_audiencia ");
+		jpqlQuery.append("JOIN CASO c ");
+		jpqlQuery.append("  ON a.id_caso = c.id_caso ");
+		jpqlQuery.append("LEFT JOIN ROL_PERSONA_CASO rpc ");
+		jpqlQuery.append("  ON c.id_caso = rpc.id_caso ");
+		jpqlQuery.append("  AND rpc.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("  AND rpc.estado = '" + UtilDominios.ESTADO_ROL_PERSONA_CASO_ASIGNADO + "' ");
+		jpqlQuery.append("  AND rpc.id_rol = (SELECT ");
+		jpqlQuery.append("                     r.id_rol ");
+		jpqlQuery.append("                   FROM ROL r ");
+		jpqlQuery.append("                   WHERE r.nombre = '" + UtilDominios.ROL_PERSONA_AUXILIAR_ADM + "' ");
+		jpqlQuery.append("                   AND r.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "') ");
+		jpqlQuery.append("LEFT JOIN PERSONA p_aux ");
+		jpqlQuery.append("  ON rpc.id_persona = p_aux.id_persona ");
+		jpqlQuery.append("  AND p_aux.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("  AND p_aux.estado_persona = '" + UtilDominios.ESTADO_PERSONA_ACTIVO + "' ");
+		jpqlQuery.append("WHERE t.fecha_entrega_transcripcion IS NOT NULL ");
+		jpqlQuery.append("AND t.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("AND d.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("AND d.tipo_documento = '" + UtilDominios.TIPO_DOCUMENTO_DIG_AUDIO + "' ");
+		jpqlQuery.append("AND a.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+		jpqlQuery.append("AND c.estado_registro = '" + UtilDominios.ESTADO_REGISTRO_ACTIVO + "' ");
+
+		if (!codigoCaso.equals("") && !codigoCaso.equals("0"))
+			jpqlQuery.append("AND c.id_caso = ?1 ");
+
+		if (!nombreCaso.equals(""))
+			jpqlQuery.append("AND LOWER(REPLACE(c.nombre, ' ', '')) LIKE ?2 ");
+
+		if (fechaIni != null && fechaFin != null)
+			jpqlQuery.append("AND t.fecha_entrega_transcripcion BETWEEN ?3 AND ?4 ");
+
+		if (!auxiliar.equals("0")) {
+			jpqlQuery.append("AND p_aux.id_persona = ?5 ");
+		}
+
+		jpqlQuery.append("ORDER BY c.id_caso ");
+
+		Query query = em.createNativeQuery(jpqlQuery.toString());
+
+		if (!codigoCaso.equals("") && !codigoCaso.equals("0"))
+			query.setParameter(1, Long.valueOf(codigoCaso));
+
+		if (!nombreCaso.equals(""))
+			query.setParameter(2, "%" + nombreCaso.toLowerCase().replaceAll("\\s", "") + "%");
+
+		if (fechaIni != null && fechaFin != null) {
+			DateFormat dateFormat = new SimpleDateFormat(UtilConstantes.FORMATO_FECHA_ANIO_MES_DIA);
+			String fechaInicio = dateFormat.format(fechaIni);
+			String fechaFinal = dateFormat.format(fechaFin);
+
+			fechaInicio = fechaInicio + UtilConstantes.CARACTER_ESPACIO + UtilConstantes.FORMATO_HORA_INICIO;
+			fechaFinal = fechaFinal + UtilConstantes.CARACTER_ESPACIO + UtilConstantes.FORMATO_HORA_FIN;
+
+			query.setParameter(3, fechaInicio);
+			query.setParameter(4, fechaFinal);
+		}
+
+		if (!auxiliar.equals("0")) {
+			query.setParameter(5, auxiliar);
+		}
+
+		List<Object[]> listObj = query.getResultList();
+		List<ReporteTranscripcionesDTO> datosReporte = new ArrayList<>();
+
+		for (Object[] campo : listObj) {
+			ReporteTranscripcionesDTO dto = new ReporteTranscripcionesDTO();
+			dto.setCodigoCaso(nvl(campo[0], UtilConstantes.CADENA_VACIA).toString());
+			dto.setNombreCaso(nvl(campo[1], UtilConstantes.CADENA_VACIA).toString());
+			dto.setAuxiliar(nvl(campo[2], UtilConstantes.CADENA_VACIA).toString());
+			dto.setSecretario(nvl(campo[3], UtilConstantes.CADENA_VACIA).toString());
+			dto.setMinutosPendientesTranscripcion(campo[4] != null
+					? UtilOperaciones.formatearNumeroDecimal(((BigDecimal) campo[4]).doubleValue(), 2).toString()
+					: UtilConstantes.CADENA_VACIA);
+			dto.setFechaGrabacion(
+					campo[5] != null ? formatearFechaReporte((Date) campo[5]) : UtilConstantes.CADENA_VACIA);
+			dto.setFechaInicioTranscripcion(
+					campo[6] != null ? formatearFechaReporte((Date) campo[6]) : UtilConstantes.CADENA_VACIA);
+			if (campo[5] != null && campo[6] != null) {
+				int difGrabacionIniTranscripcion = obtenerDiasHabilesEntreFechas((Date) campo[5], (Date) campo[6]);
+				dto.setDifGrabacionIniTranscripcion(String.valueOf(difGrabacionIniTranscripcion > 0
+						? difGrabacionIniTranscripcion - 1 : difGrabacionIniTranscripcion));
+			}
+			dto.setFechaEntregaTranscripcion(
+					campo[7] != null ? formatearFechaReporte((Date) campo[7]) : UtilConstantes.CADENA_VACIA);
+			if (campo[5] != null && campo[7] != null) {
+				int difGrabacionEntTranscripcion = obtenerDiasHabilesEntreFechas((Date) campo[5], (Date) campo[7]);
+				dto.setDifGrabacionEntTranscripcion(String.valueOf(difGrabacionEntTranscripcion > 0
+						? difGrabacionEntTranscripcion - 1 : difGrabacionEntTranscripcion));
+			}
+			dto.setMinutosATranscribir(campo[9] != null
+					? UtilOperaciones.formatearNumeroDecimal(((BigDecimal) campo[9]).doubleValue(), 2).toString()
+					: UtilConstantes.CADENA_VACIA);
+			datosReporte.add(dto);
+		}
+
+		return datosReporte;
+	}
+	
+	/**
+	 * Asigna un estado Sorteable o No sorteable según el nombre del motivo asociado a  un arbitro
+	 * @param arbitroDTO
+	 * @return
+	 */
+	public List<ReporteEstadosArbitroHistoricoEstadoDTO> consultarEstadosServicioMateriaArbitroMotivo(ArbitroDTO arbitroDTO) {
+		List<ReporteEstadosArbitroHistoricoEstadoDTO> estadosArbitro= new ArrayList<>();
+		estadosArbitro = this.consultarEstadosServicioMateriaArbitro(arbitroDTO);
+		if (estadosArbitro!=null && !estadosArbitro.isEmpty()) {
+			for (Iterator iterator = estadosArbitro.iterator(); iterator
+					.hasNext();) {
+				ReporteEstadosArbitroHistoricoEstadoDTO reporteEstado = (ReporteEstadosArbitroHistoricoEstadoDTO) iterator
+						.next();
+				if (!reporteEstado.getMotivo().equals(UtilConstantes.ARBITRO_HABILITADO_SERVICIO_MATERIA)) {
+					reporteEstado.setEstado(dominioFacade.getNombreDominio(UtilDominios.DOMINIO_ESTADO_ARBITROS, 
+							UtilDominios.DOMINIO_ESTADO_NO_SORTEABLE));
+				}else {
+					reporteEstado.setEstado(dominioFacade.getNombreDominio(UtilDominios.DOMINIO_ESTADO_ARBITROS, 
+							UtilDominios.DOMINIO_ESTADO_SORTEABLE));
+					reporteEstado.setMotivo(UtilConstantes.CADENA_VACIA);
+				}
+			}
+		}
+		return estadosArbitro;
+	}
+    /**
+     * Consulta el estado del arbitro seleccionado en cada uno de los servicio-materia del arbitro que se pasa como parámetro, 
+     * lo ordena por la fecha del estado.
+     * @param arbitroDTO
+     * @return List<ReporteEstadosArbitroEstadoArbitroEnServicioMateriaDTO> La lista de los arbitros (Vacia si no hay asignaciones para el arbitro
+     * @throws SimascException
+     */
+    public List<ReporteEstadosArbitroHistoricoEstadoDTO> consultarEstadosServicioMateriaArbitro(ArbitroDTO arbitroDTO) {
+    	
+    	Persona arbitro = manejadorPersona.buscar(arbitroDTO.getIdPersona());
+    	if(arbitro == null){
+    		throw new SimascException(EXCEPCION_ARBITRO_CONSULTADO_NULO);
+    	}
+    	
+    	StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append("select nombre as motivo, fecha as fechaAsignacion ");
+		jpqlQuery.append("from HISTORICO_ESTADO_PERSONA_ROL h ");
+		jpqlQuery.append("inner join DOMINIO de on de.codigo = h.id_motivo and de.dominio = ?1 ");
+		jpqlQuery.append("where id_persona = ?2 ");
+		jpqlQuery.append("order by fecha");
+		
+		
+		Query q = em.createNativeQuery(jpqlQuery.toString(), ReporteEstadosArbitroHistoricoEstadoDTO.class);
+		q.setParameter(1, UtilDominios.DOMINIO_MOTIVO_ESTADO);
+		q.setParameter(2, arbitroDTO.getIdPersona());  		
+		q.setParameter(3, UtilDominios.ESTADO_ARBITROS_HABILITADO);  		
+		
+    	return q.getResultList();
+    }
+    
+    /**
+     * Consulta la informacion de los casos en los que se encuentra asignado el arbittro seleccionado. Ordena por el código del caso.
+     * @param arbitroDTO
+     * @return
+     * @throws List<ReporteEstadosArbitroCasosArbitroDTO>
+     */
+    public List<ReporteEstadosArbitroCasosArbitroDTO> consultarCasosArbitro(
+    		ArbitroDTO arbitroDTO) {	    	
+    	
+    	StringBuilder jpqlQuery = new StringBuilder();
+		jpqlQuery.append("SELECT ");
+		jpqlQuery.append("c.id_caso AS codigoCaso ");
+		jpqlQuery.append(", c.nombre AS nombreCaso ");
+		jpqlQuery.append(", fecha_radicacion AS fechaRadicacionCaso ");
+		jpqlQuery.append(", m.nombre as materiaCaso ");
+		jpqlQuery.append(", c.valor_pretensiones AS cuantia ");
+		jpqlQuery.append(", de.nombre AS metodoNombramiento ");
+		jpqlQuery.append(", (select max(fecha_de_asignacion) from EVENTO_ROL_PERSONA_CASO er where r.id_persona = er.id_persona ");
+		jpqlQuery.append("AND c.id_caso = er.id_caso AND er.estado_asignado = ?3 ");
+		jpqlQuery.append("AND r.id_rol = er.id_rol) as fechaNombramiento ");
+		jpqlQuery.append("FROM CASO c ");
+		jpqlQuery.append("INNER JOIN MATERIA m ON c.id_materia = m.id_materia ");
+		jpqlQuery.append("INNER JOIN ROL_PERSONA_CASO r ON r.id_caso = c.id_caso ");
+		jpqlQuery.append("INNeR JOIN DOMINIO de ON de.codigo = r.metodo_nombramiento AND de.dominio = ?8 ");
+		jpqlQuery.append("INNER JOIN PARAMETRO_SERVICIO_SORTEO p ON c.id_servicio = p.id_servicio ");
+		jpqlQuery.append("AND r.id_rol = p.id_rol ");
+		jpqlQuery.append("WHERE c.estado_caso <> ?5 ");
+		jpqlQuery.append("AND c.estado_registro = ?6 ");
+		jpqlQuery.append("AND r.estado in (?1, ?2, ?3, ?4) ");
+		jpqlQuery.append("AND r.estado_registro = ?6 ");
+		jpqlQuery.append("AND r.id_persona = ?7 ");
+		jpqlQuery.append(" order by c.id_caso");
+				
+		Query q = em.createNativeQuery(jpqlQuery.toString(), ReporteEstadosArbitroCasosArbitroDTO.class);
+		q.setParameter(1, UtilDominios.ESTADO_ROL_PERSONA_CASO_ACEPTADO);
+		q.setParameter(2, UtilDominios.ESTADO_ROL_PERSONA_CASO_DESIGNADO);
+		q.setParameter(3, UtilDominios.ESTADO_ROL_PERSONA_CASO_POR_ACEPTAR);
+		q.setParameter(4, UtilDominios.ESTADO_ROL_PERSONA_CASO_ASIGNADO);
+		q.setParameter(5, UtilDominios.ESTADO_CASO_CERRADO);
+		q.setParameter(6, UtilDominios.ESTADO_REGISTRO_ACTIVO);
+		q.setParameter(7, arbitroDTO.getIdPersona());
+		q.setParameter(8, UtilDominios.METODOS_DE_NOMBRAMIENTO);
+    	return q.getResultList();
+    }
+    
+    public List<ReporteEstadosArbitroRolDTO> consultarRolesArbitro(ArbitroDTO arbitroDTO) {
+    	StringBuilder jpqlQuery = new StringBuilder();
+    	jpqlQuery.append("select distinct de.nombre as rol ");
+    	jpqlQuery.append(", l.nombre as lista ");
+    	jpqlQuery.append(", rp.fecha_inicio_vigencia as fechaAsignacion ");
+    	jpqlQuery.append(", rp.fecha_fin_vigencia as fechaFinalizacion ");
+    	jpqlQuery.append("from rol_persona rp ");
+    	jpqlQuery.append("inner join rol r on r.id_rol = rp.id_rol ");
+    	jpqlQuery.append("inner join PARAMETRO_SERVICIO_SORTEO ps on r.id_rol = ps.id_rol ");
+    	jpqlQuery.append("left join lista l on l.id_lista = rp.id_lista ");
+    	jpqlQuery.append("INNER JOIN DOMINIO de on de.codigo = r.nombre AND de.dominio = ?1 ");
+    	jpqlQuery.append("where rp.id_persona = ?2 ");
+    	jpqlQuery.append("order by de.nombre ");
+    	
+    	Query q = em.createNativeQuery(jpqlQuery.toString(), ReporteEstadosArbitroRolDTO.class);
+    	q.setParameter(1, UtilDominios.DOMINIO_ROL_PERSONA);
+    	q.setParameter(2, arbitroDTO.getIdPersona());
+ 
+    	return q.getResultList();
+    }
+    
+    public List<ReporteEstadosArbitroMateriaDTO> consultarMateriasArbitro(ArbitroDTO arbitroDTO) {
+    	StringBuilder jpqlQuery = new StringBuilder();
+    	jpqlQuery.append("select de.nombre as rol, m.nombre as nombreMateria ");
+    	jpqlQuery.append(", psm.fecha_inicio_vigencia as fechaAsignacion ");
+    	jpqlQuery.append(", psm.fecha_fin_de_vigencia as fechaFinalizacion ");
+    	jpqlQuery.append(", CASE WHEN e.estado = ?1 THEN case psm.estado_para_sorteo ");
+    	jpqlQuery.append("WHEN ?4 THEN 'SI' ELSE 'NO' END ELSE '' END AS disponibleSorteo ");
+    	jpqlQuery.append("from rol_persona rp ");
+    	jpqlQuery.append("inner join rol r on r.id_rol = rp.id_rol ");
+    	jpqlQuery.append("INNER JOIN ESTADO_PERSONA_TIPO_SERVICIO e on rp.id_persona = e.id_persona  ");
+    	jpqlQuery.append("inner join PARAMETRO_SERVICIO_SORTEO ps on rp.id_rol = ps.id_rol ");
+    	jpqlQuery.append("inner join PERSONA_SERVICIO_MATERIA psm on ps.id_servicio = psm.id_servicio and psm.id_persona = rp.id_persona ");
+    	jpqlQuery.append("inner join materia m on m.id_materia = psm.id_materia ");
+    	jpqlQuery.append("INNER JOIN DOMINIO de on de.codigo = r.nombre AND de.dominio = ?2 ");
+    	jpqlQuery.append("where rp.id_persona = ?3 ");
+    	jpqlQuery.append("and rp.estado_registro = ?4 ");
+    	jpqlQuery.append("order by de.nombre ");
+    	
+    	Query q = em.createNativeQuery(jpqlQuery.toString(), ReporteEstadosArbitroMateriaDTO.class);
+    	q.setParameter(1, UtilDominios.ESTADO_ARBITROS_HABILITADO);
+    	q.setParameter(2, UtilDominios.DOMINIO_ROL_PERSONA);
+    	q.setParameter(3, arbitroDTO.getIdPersona());
+    	q.setParameter(4, UtilDominios.ESTADO_REGISTRO_ACTIVO);
+    	return q.getResultList();
+    }
+    
+    /**
+	 * Método encargado de obtener la lista de árbitros de un caso nombrados por
+	 * sorteo y ordenados por el tipo de nombramiento al momento de la
+	 * realización del mismo
+	 * 
+	 * @param sorteo
+	 * @param caso
+	 * @return
+	 */
+	private List<RolPersonaCaso> obtenerArbitrosSorteoCaso(Sorteo sorteo, Caso caso) {
+		List<RolPersonaCaso> arbitrosSelec = manejadorRolPersonaCaso.obtenerArbitrosSorteoCaso(caso.getIdCaso(),
+				sorteo.getIdSorteo());
+
+		// Obtiene el tipo de nombramiento del árbitro resultado del sorteo y no
+		// el actual
+		for (RolPersonaCaso rolPersonaCaso : arbitrosSelec) {
+			rolPersonaCaso.obtenerNombramientoPorSorteo();
+		}
+
+		List<RolPersonaCaso> arbitrosSelecOrdenados = new ArrayList<RolPersonaCaso>(arbitrosSelec);
+
+		// Ordena los árbitros de acuerdo al nombramiento resultado del sorteo
+		Collections.sort(arbitrosSelecOrdenados, new Comparator<RolPersonaCaso>() {
+
+			@Override
+			public int compare(RolPersonaCaso o1, RolPersonaCaso o2) {
+				return o1.getNombramientoSorteo().compareTo(o2.getNombramientoSorteo());
+			}
+		});
+		return arbitrosSelecOrdenados;
+	}
+
+}

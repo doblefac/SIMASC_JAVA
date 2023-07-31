@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition  xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+</h:head>
+<h:body>
+    <div class="ui-g">
+	   <div class="ui-g-2">
+	        <!-- Menú orientado a la Izquierda -->
+		    <h:form>
+		        <f:ajax render=":menuContent">
+				    <p:remoteCommand id="commandId" name="command" actionListener="#{controladorMenu.setUrl}" 
+                		 update="menuContent" oncomplete="submit()" />
+			  	    <p:menu toggleabbreadcrumbFormle="true" style="min-height:400px; border:none;"  >
+					        <p:submenu rendered="#{!controladorMenu.bloqueoSorteo}" label="Sorteo Nacional" collapsed="false">
+					        	<p:menuitem value="Lista de casos" disabled="#{controladorMenu.bloqueoSorteo}" onclick="command([{name:'key', value:'1'}]);" icon="fa fa-cubes" />
+					        </p:submenu>
+					        <p:submenu rendered="#{!controladorMenu.bloqueoSorteo}" label="Sorteo Internacional" collapsed="false">
+					        	<p:menuitem value="Lista de casos" disabled="#{controladorMenu.bloqueoSorteo}" onclick="command([{name:'key', value:'3'}]);" icon="fa fa-cubes" />
+					        </p:submenu>
+					        <p:submenu rendered="#{!controladorMenu.bloqueoSorteo}" label="Otras Designaciones" collapsed="false">
+					        	<p:menuitem value="Mediadores" disabled="#{controladorMenu.bloqueoSorteo}" onclick="command([{name:'key', value:'8'}]);" icon="fa fa-cubes" />
+					        	<p:menuitem value="Secretarios" disabled="#{controladorMenu.bloqueoSorteo}" onclick="command([{name:'key', value:'18'}]);" icon="fa fa-cubes" />
+					        	<p:menuitem value="Árbitros de Recusación" disabled="#{controladorMenu.bloqueoSorteo}" onclick="command([{name:'key', value:'19'}]);" icon="fa fa-cubes" />
+					        </p:submenu>
+					        <p:submenu label="Reportes" collapsed="false">
+					            <p:menuitem value="Lista de reportes" onclick="command([{name:'key', value:'reportes'}]);" icon="fa fa-paste" />
+					        </p:submenu>		        
+					       
+				    </p:menu>
+				</f:ajax>
+				
+								
+		    </h:form>
+		</div>
+		<div class="ui-g-10">
+			<h:panelGroup ajax="true" id="menuContent" layout="block">
+			  	<ui:include id="menuView"  src="#{controladorMenu.url}" />
+    		</h:panelGroup>
+    	</div>    	     
+	</div>
+</h:body>
+</ui:composition>

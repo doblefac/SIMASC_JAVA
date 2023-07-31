@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+	<h:head>
+	</h:head>
+	<h:body >
+		<f:event listener="#{controladorReporteCasoParteView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+		<h:form>
+		<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteCasoParteView.postConstruct}"/>
+			<p:panel id="panel" header="Casos por parte"
+				style="margin-bottom:10px;">
+				<p:panelGrid columns="4" columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"  styleClass="contentGrid"   cellspacing="10" layout="grid">
+					
+					<p:outputLabel for="fechaIni" value="Fecha Inicial*" />
+				<p:calendar id="fechaIni" locale="es"
+					value="#{controladorReporteCasoParteView.fechaInicial}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha inicial no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteCasoParteView.onDateSelect}" />
+				</p:calendar>
+				<p:outputLabel for="fechaFin" value="Fecha Final*" />
+				<p:calendar id="fechaFin" locale="es"
+					value="#{controladorReporteCasoParteView.fechaFinal}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha final no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteCasoParteView.onDateSelectF}" />
+				</p:calendar>
+					<p:outputLabel for="input3" value="Primer nombre:"></p:outputLabel>
+					<p:inputText id="input3"
+						value="#{controladorReporteCasoParteView.primerNombre}">
+					</p:inputText>
+					<p:outputLabel for="input4" value="Primer Apellido:"></p:outputLabel>
+					<p:inputText id="input4" 
+						value="#{controladorReporteCasoParteView.primerApellido}">
+					</p:inputText>
+					<p:outputLabel for="seleccionRol" value="Rol" />
+					<p:selectOneMenu id="seleccionRol"
+						value="#{controladorReporteCasoParteView.seleccionRol}">
+						<f:selectItem itemLabel="Todos los roles" itemValue="TODOS" />
+						<f:selectItems
+							value="#{controladorReporteCasoParteView.dominiosTipoRol}"
+							var="rol" itemLabel="#{rol.nombre}"
+							itemValue="#{rol.dominioPK.codigo}" />
+					</p:selectOneMenu>
+				</p:panelGrid>
+				<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>
+					<p:commandButton value="Exportar Excel" icon="fa fa-file-excel-o" disabled="#{controladorReporteCasoParteView.isBotonExcelDisabled()}" ajax="false" >
+						<p:dataExporter type="xls" target="tbl"
+							fileName="#{controladorReporteCasoParteView.nombreReporte}"
+							postProcessor="#{controladorReporteCasoParteView.postProcessXLS}" />
+					</p:commandButton>	
+					<h:commandButton value="Buscar" update="growl"
+						actionListener="#{controladorReporteCasoParteView.generarReporte}" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+					</h:commandButton>
+				</p:panelGrid>
+			</p:panel>
+			<p:panelGrid columns="1" layout="grid">
+				<p:dataTable id="tbl" var="reporte"
+					value="#{controladorReporteCasoParteView.reporteCasoParteDTOs}"
+					emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true"
+					rowIndexVar="rowIndex"					
+					rows="#{controladorReporteCasoParteView.resultadoPagina}"
+					style="margin-bottom:20px" scrollable="true" scrollWidth="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}"
+					rowsPerPageTemplate="5,10,20">
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Consecutivo" />
+						</f:facet>
+						<h:outputText value="#{rowIndex+1}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Código del caso" />
+						</f:facet>
+						<h:outputText converter="javax.faces.Integer"  value="#{reporte.codigoCaso}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Nombre del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombreCaso}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Fecha de radicación del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaRadicacion}">
+							<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+						</h:outputText>
+					</p:column>
+					
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Servicio" />
+						</f:facet>
+						<h:outputText value="#{reporte.servicio}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Tipo de cuantía" />
+						</f:facet>
+						<h:outputText value="#{reporte.tipoCuantia}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Valor de las pretensiones" />
+						</f:facet>
+						<h:outputText value="#{reporte.valorPretension}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Rol" />
+						</f:facet>
+						<h:outputText value="#{reporte.rol}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Tipo de empresa" />
+						</f:facet>
+						<h:outputText value="#{reporte.tipoEmpresa}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Tipo de persona" />
+						</f:facet>
+						<h:outputText value="#{reporte.tipoPersona}" />
+					</p:column>
+
+					<p:column width="120">
+						<f:facet name="header">
+							<h:outputText value="Tipo de identificación" />
+						</f:facet>
+						<h:outputText value="#{reporte.tipoIdentificacion}" />
+					</p:column>
+
+					<p:column width="120">
+						<f:facet name="header">
+							<h:outputText value="Número de identificación" />
+						</f:facet>
+						<h:outputText value="#{reporte.numeroIdentificacion}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Tarjeta profesional" />
+						</f:facet>
+						<h:outputText value="#{reporte.tarjetaProfesional}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Nombres y apellidos" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombre}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Dirección" />
+						</f:facet>
+						<h:outputText value="#{reporte.direccion}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Ciudad" />
+						</f:facet>
+						<h:outputText value="#{reporte.ciudad}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Telefonos" />
+						</f:facet>
+						<h:outputText value="#{reporte.telefono_uno}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Fax" />
+						</f:facet>
+						<h:outputText value="#{reporte.fax}" />
+					</p:column>
+					
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Consumo" />
+						</f:facet>
+						<h:outputText value="#{reporte.consumo}" />
+					</p:column>
+
+					<p:column width="250">
+						<f:facet name="header">
+							<h:outputText value="Correo" />
+						</f:facet>
+						<h:outputText value="#{reporte.correo_uno}" />
+					</p:column>
+					
+					<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteCasoParteView.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+					
+				</p:dataTable>
+			</p:panelGrid>
+
+		</h:form>
+	</h:body>
+</ui:composition>

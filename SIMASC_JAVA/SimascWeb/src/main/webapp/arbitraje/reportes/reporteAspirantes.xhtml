@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Facelet Title</title>
+</h:head>
+<h:body >
+	<f:event listener="#{controladorReporteAspirantes.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<h:form>
+	<p:growl id="growl" showDetail="true" sticky="true" />  
+	<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteAspirantes.postConstruct}"/>
+		<p:panel id="infoCaso" header="Reporte de aspirantes"
+			style="margin-bottom:20px">
+			<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>
+					<div></div>
+					<p:commandButton
+					actionListener="#{controladorReporteAspirantes.exportarExcel}"
+					value="Exportar a Excel" icon="fa fa-file-excel-o" ajax="false"
+					disabled="#{controladorReporteAspirantes.exportarBloqueado}"
+					immediate="#{!controladorReporteAspirantes.exportarBloqueado}">
+					<p:dataExporter type="xls" target="tbl"
+						fileName="#{controladorReporteAspirantes.nombreReporte}" 
+						postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+					</p:commandButton>
+			</p:panelGrid>	
+
+			<p:panelGrid columns="1" layout="grid">
+
+				<p:dataTable id="tbl" var="reporte" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorReporteAspirantes.listaReporte}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" rowsPerPageTemplate="5,10,20"
+					rows="#{controladorReporteAspirantes.filasPaginador}"
+					style="margin-bottom:20px" scrollable="true" scrollWidth="98%"
+					width="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}">
+
+					<p:column width="100">
+						<f:facet name="header">
+							<h:outputText value="Número de identificación" />
+						</f:facet>
+						<h:outputText value="#{reporte.identificacion}" />
+					</p:column>
+
+					<p:column width="300">
+						<f:facet name="header">
+							<h:outputText value="Nombres" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombres}" />
+					</p:column>
+
+
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText value="Requisitos cumplidos" />
+						</f:facet>
+						<h:outputText value="#{reporte.reqCumplidos}" />
+					</p:column>
+					
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText value="Requisitos no cumplidos" />
+						</f:facet>
+						<h:outputText value="#{reporte.reqNoCumplidos}" />
+					</p:column>
+					
+					<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteAspirantes.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>			
+				</p:dataTable>
+			</p:panelGrid>
+		</p:panel>
+	</h:form>
+</h:body>
+</html>

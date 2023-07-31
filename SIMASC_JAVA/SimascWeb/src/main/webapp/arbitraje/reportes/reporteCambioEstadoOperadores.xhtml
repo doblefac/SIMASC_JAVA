@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+<title>ReporteCambioEstadoOperadores</title>
+</h:head>
+<h:body >
+	<f:event listener="#{controladorReporteCambioEstadoOperadoresView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<h:form>
+	<p:remoteCommand  id="reset" name="reset" action="#{controladorRadicacionDocumentosView.postConstruct}"/>
+		<p:panel id="infoCaso" header="Cambio de estado de operadores"
+			style="margin-bottom:20px">
+
+			<p:panelGrid columns="4"  columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"  styleClass="contentGrid"   cellspacing="10"  layout="grid">
+				<p:outputLabel for="fechaIni" value="Fecha Inicial*" />
+				<p:calendar id="fechaIni" locale="es"
+					value="#{controladorReporteCambioEstadoOperadoresView.fechaInicialSeleccionada}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha inicial no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteCambioEstadoOperadoresView.onDateSelect}" />
+				</p:calendar>
+
+				<p:outputLabel for="fechaFin" value="Fecha Final*" />
+				<p:calendar id="fechaFin" locale="es"
+					value="#{controladorReporteCambioEstadoOperadoresView.fechaFinSeleccionada}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha final no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteCambioEstadoOperadoresView.onDateSelectF}" />
+				</p:calendar>				
+				<p:outputLabel for="selectTipoCaso" value="Servicio" />
+					<p:selectOneMenu
+						value="#{controladorReporteCambioEstadoOperadoresView.tipoCasoSeleccionadoReporte}"
+						id="selectTipoCaso"
+						valueChangeListener="#{controladorReporteCambioEstadoOperadoresView.cargarMaterias}">
+						<f:selectItem itemLabel="Seleccione" itemValue="" />
+						<f:selectItems
+							value="#{controladorReporteCambioEstadoOperadoresView.tipoCasoDTOs}"
+							var="lS" itemLabel="#{lS.nombre}" itemValue="#{lS.idServicio}"></f:selectItems>
+						<p:ajax event="valueChange" immediate="true" process="@this"
+							update="selectMateria" />
+					</p:selectOneMenu>
+
+					<p:outputLabel for="selectMateria" value="Materia" />
+					<p:selectOneMenu
+						value="#{controladorReporteCambioEstadoOperadoresView.materiaSeleccionada}"
+						id="selectMateria">
+						<f:selectItem itemLabel="Seleccione" itemValue="" />
+						<f:selectItems
+							value="#{controladorReporteCambioEstadoOperadoresView.materiaDTOs}"
+							var="lm" itemLabel="#{lm.nombre}" itemValue="#{lm.idMateria}"></f:selectItems>
+					</p:selectOneMenu>
+					
+					<p:outputLabel for="selectTipoLista" value="Tipo de lista" />
+					<p:selectOneMenu autoWidth="false" 	style="min-width: 0px"
+						value="#{controladorReporteCambioEstadoOperadoresView.tipoListaSeccionado}"
+						id="selectTipoLista">
+						<f:selectItem itemLabel="Todos" itemValue="0" />
+						<f:selectItems
+							value="#{controladorReporteCambioEstadoOperadoresView.tipoListaDTOs}" var="tm"
+							itemLabel="#{tm.nombre}" itemValue="#{tm.idLista}"></f:selectItems>
+					</p:selectOneMenu>
+					<p:outputLabel value="" />
+					<p:outputLabel value="" />
+					<p:outputLabel for="idSOMArbitro" value="Operador" />
+					<p:selectOneMenu value="#{controladorReporteCambioEstadoOperadoresView.arbitroSeleccionado}"
+						id="idSOMArbitro" style="width: 150px;">
+						<f:selectItem itemLabel="Seleccione..." itemValue="-1" />
+						<f:selectItems value="#{controladorReporteCambioEstadoOperadoresView.arbitros}"
+							var="arbitro" itemLabel="#{arbitro.nombreCompleto}"
+							itemValue="#{arbitro.idPersona}"></f:selectItems>
+				</p:selectOneMenu>
+					
+													
+			</p:panelGrid>
+			<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+				<div></div>
+				<p:commandButton value="Exportar a Excel"
+					 icon="fa fa-file-excel-o" disabled="#{controladorReporteCambioEstadoOperadoresView.visible}" ajax="false">
+					<p:dataExporter type="xls" target="tbl"
+						fileName="#{controladorReporteCambioEstadoOperadoresView.nombreReporte}" 
+						postProcessor="#{controladorReporteCambioEstadoOperadoresView.generarXLS}" />
+				</p:commandButton>
+				<h:commandButton update="growl"
+					actionListener="#{controladorReporteCambioEstadoOperadoresView.botonBuscar}"
+					value="Buscar" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" />
+				.
+					
+			</p:panelGrid>	
+		</p:panel>
+		<p:panel>		
+			<p:panelGrid columns="1" layout="grid">
+
+				<p:dataTable id="tbl" var="reporteD" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorReporteCambioEstadoOperadoresView.reporte}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" style="margin-bottom:20px"
+					scrollable="true" scrollWidth="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}"
+					rows="10" rowsPerPageTemplate="5,10,20"
+					rowIndexVar="rowIndex">
+
+				<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Operador" />
+						</f:facet>
+						<h:outputText value="#{reporteD.operador}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Servicio" />
+						</f:facet>
+						<h:outputText value="#{reporteD.servicio}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Rol" />
+						</f:facet>
+						<h:outputText value="#{reporteD.rol}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Consumo" />
+						</f:facet>
+						<h:outputText value="#{reporteD.consumo}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Lista" />
+						</f:facet>
+						<h:outputText value="#{reporteD.lista}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Materia" />
+						</f:facet>
+						<h:outputText value="#{reporteD.materia}" />
+					</p:column>
+						<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Estado" />
+						</f:facet>
+						<h:outputText value="#{reporteD.estado}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Motivo" />
+						</f:facet>
+						<h:outputText value="#{reporteD.motivo}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Fecha del cambio" />
+						</f:facet>
+						<h:outputText value="#{reporteD.fechaCambio}" />
+					</p:column>
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Usuario cambio" />
+						</f:facet>
+						<h:outputText value="#{reporteD.usuario}" />
+					</p:column>
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Observaciones" />
+						</f:facet>
+						<h:outputText value="#{reporteD.observaciones}" />
+					</p:column>
+					
+					<f:facet name="footerD">
+							<h:outputText value="Total registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteCambioEstadoOperadoresView.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+				</p:dataTable>
+			</p:panelGrid>
+		</p:panel>
+	</h:form>
+</h:body>
+</ui:composition>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?><wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" targetNamespace="http://correos.ccb.org.co/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:tns="http://correos.ccb.org.co/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://correos.ccb.org.co/">
+      <s:element name="envioCorreo">
+        <s:complexType>
+          <s:sequence>
+            <s:element maxOccurs="1" minOccurs="0" name="inDTO" type="tns:EnvioCorreoInDTO"/>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="EnvioCorreoInDTO">
+        <s:sequence>
+          <s:element maxOccurs="1" minOccurs="0" name="llave" type="s:string"/>
+          <s:element maxOccurs="1" minOccurs="0" name="de" type="s:string"/>
+          <s:element maxOccurs="1" minOccurs="0" name="para" type="tns:ArrayOfString"/>
+          <s:element maxOccurs="1" minOccurs="0" name="asunto" type="s:string"/>
+          <s:element maxOccurs="1" minOccurs="0" name="tipoContenido" type="s:string"/>
+          <s:element maxOccurs="1" minOccurs="0" name="contenido" type="s:string"/>
+          <s:element maxOccurs="1" minOccurs="0" name="adjuntos" type="tns:ArrayOfAdjuntoDTO"/>
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfString">
+        <s:sequence>
+          <s:element maxOccurs="unbounded" minOccurs="0" name="string" nillable="true" type="s:string"/>
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfAdjuntoDTO">
+        <s:sequence>
+          <s:element maxOccurs="unbounded" minOccurs="0" name="AdjuntoDTO" nillable="true" type="tns:AdjuntoDTO"/>
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="AdjuntoDTO">
+        <s:sequence>
+          <s:element maxOccurs="1" minOccurs="0" name="nomAdjunto" type="s:string"/>
+          <s:element maxOccurs="1" minOccurs="0" name="adjunto" type="s:string"/>
+        </s:sequence>
+      </s:complexType>
+      <s:element name="envioCorreoResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element maxOccurs="1" minOccurs="0" name="envioCorreoResult" type="tns:EnvioCorreoOutDTO"/>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="EnvioCorreoOutDTO">
+        <s:sequence>
+          <s:element maxOccurs="1" minOccurs="1" name="resultado" type="s:short"/>
+          <s:element maxOccurs="1" minOccurs="0" name="mensaje" type="s:string"/>
+        </s:sequence>
+      </s:complexType>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="envioCorreoSoapIn">
+    <wsdl:part element="tns:envioCorreo" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="envioCorreoSoapOut">
+    <wsdl:part element="tns:envioCorreoResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:portType name="EnvioCorreoServiceSoap">
+    <wsdl:operation name="envioCorreo">
+      <wsdl:input message="tns:envioCorreoSoapIn"/>
+      <wsdl:output message="tns:envioCorreoSoapOut"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="EnvioCorreoServiceSoap" type="tns:EnvioCorreoServiceSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="envioCorreo">
+      <soap:operation soapAction="http://correos.ccb.org.co/envioCorreo" style="document"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="EnvioCorreoServiceSoap12" type="tns:EnvioCorreoServiceSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="envioCorreo">
+      <soap12:operation soapAction="http://correos.ccb.org.co/envioCorreo" style="document"/>
+      <wsdl:input>
+        <soap12:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="EnvioCorreoService">
+    <wsdl:port binding="tns:EnvioCorreoServiceSoap" name="EnvioCorreoServiceSoap">
+      <soap:address location="http://appintranet/WSEnvioCorreo/EnvioCorreoService.asmx"/>
+    </wsdl:port>
+    <wsdl:port binding="tns:EnvioCorreoServiceSoap12" name="EnvioCorreoServiceSoap12">
+      <soap12:address location="http://appintranet/WSEnvioCorreo/EnvioCorreoService.asmx"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

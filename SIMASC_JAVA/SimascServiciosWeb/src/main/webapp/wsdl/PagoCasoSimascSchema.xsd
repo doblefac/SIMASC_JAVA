@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<schema 
+targetNamespace="http://services.simasc"	
+xmlns="http://www.w3.org/2001/XMLSchema" 
+xmlns:tns="http://services.simasc">
+
+	<complexType name="PagoCasoType">
+		<sequence>
+			<element name="numeroRecibo" type="string" maxOccurs="1" minOccurs="1" nillable="false" >
+				<annotation>
+					<documentation>El valor del campo es de máximo 8 digitos, si
+						este esta repetido en la base simasc se retornara un mensaje
+						indicando el error</documentation>
+				</annotation>
+			</element>
+			
+			<element name="numeroOrdenPago" type="string" maxOccurs="1" minOccurs="1" nillable="false">
+				<annotation>
+					<documentation>Ese el numero de la orden de pago generado</documentation>
+				</annotation>
+			</element>
+			
+			<element name="nombreQuienPaga" type="string" maxOccurs="1" minOccurs="1" nillable="false">
+				<annotation>
+					<documentation>Define el nombre de la persona quien paga</documentation>
+				</annotation>
+			</element>
+			<element name="tipoIdentificacion" type="string" maxOccurs="1" minOccurs="1" nillable="false">
+				<annotation>
+					<documentation>Define el tipo de identificación de quien paga
+					</documentation>
+				</annotation>
+			</element>
+			<element name="numeroIdentificacion" type="string" maxOccurs="1" minOccurs="1" nillable="false">
+				<annotation>
+					<documentation>Define el numero de documento de la persona quien paga</documentation>
+				</annotation>
+			</element>
+			<element name="valorPago" type="decimal" maxOccurs="1" minOccurs="1" nillable="false">
+				<annotation>
+					<documentation>Define el valor del pago</documentation>
+				</annotation>
+			</element>
+			<element name="idSede" type="string" maxOccurs="1" minOccurs="1" nillable="false">
+				<annotation>
+					<documentation>Corresponde al id de la sede donde se realiza el pago</documentation>
+				</annotation>
+			</element>			
+
+			<element name="detallePago" type="tns:DetallePagoCasoType" maxOccurs="unbounded" minOccurs="1" >
+				<annotation>
+					<documentation>Lista que contiene el detalle del pago
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+	</complexType>
+
+	<complexType name="DetallePagoCasoType">
+		<sequence>
+			<element name="valor" type="decimal" maxOccurs="1" minOccurs="1" nillable="false">
+				<annotation>
+					<documentation>Valor del item de pago</documentation>
+				</annotation>
+			</element>
+			<element name="servicioCaja" type="string" maxOccurs="1" minOccurs="1" nillable="false">
+				<annotation>
+					<documentation>Valor del servicio al que corresponde el detalle del pago </documentation>
+				</annotation>
+			</element>
+			<element name="codigoItem" type="int" maxOccurs="1" minOccurs="1" nillable="false">
+				<annotation>
+					<documentation>Valor numerico que corresponde al número del item
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+	</complexType>
+
+	<complexType name="CrearPagoCasoReqType">
+		<sequence>
+			<element name="PagoCaso" type="tns:PagoCasoType" maxOccurs="1" minOccurs="1"></element>
+		</sequence>
+	</complexType>
+
+	<element name="CrearPagoCasoRequest" type="tns:CrearPagoCasoReqType"></element>
+
+	<complexType name="CrearPagoCasoRespType">
+		<sequence>
+			<element name="codigo" type="int" maxOccurs="1" minOccurs="1" ></element>
+			<element name="mensajePago" type="string" maxOccurs="1" minOccurs="1" ></element>
+			<element name="numeroRecibo" type="string" maxOccurs="1" minOccurs="0" ></element>
+			<element name="valorPago" type="decimal" maxOccurs="1" minOccurs="0" ></element>
+		</sequence>
+	</complexType>
+
+	<element name="CrearPagoCasoResponse" type="tns:CrearPagoCasoRespType"></element>
+
+
+	<element name="CrearPagoCasoFault" type="tns:CrearPagoCasoFaultType"></element>
+
+	<complexType name="CrearPagoCasoFaultType">
+		<sequence>
+			<element name="enviarMensajeFault" type="string" maxOccurs="1" minOccurs="1" ></element>
+			<element name="codigoFault" type="int" maxOccurs="1" minOccurs="1" ></element>
+		</sequence>
+	</complexType>
+
+
+</schema>

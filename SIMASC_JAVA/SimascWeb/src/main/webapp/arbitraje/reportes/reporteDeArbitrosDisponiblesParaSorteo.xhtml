@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+	<h:head>
+	</h:head>
+	<h:body >
+		<f:event listener="#{controladorReporteArbitrosDisponiblesParaSorteosView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+		<h:form>
+		<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteArbitrosDisponiblesParaSorteosView.postConstruct}"/>
+			<p:panel id="infoCaso" header="Operadores Seleccionados por Sorteo"
+				style="margin-bottom:20px">
+
+				<p:panelGrid columns="4"
+					columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"
+					layout="grid" styleClass="contentGrid"   cellspacing="10"  >
+					<p:outputLabel for="fechaIni" value="Fecha Sorteo" />
+					<p:calendar id="fechaIni" locale="es"
+						value="#{controladorReporteArbitrosDisponiblesParaSorteosView.fechaSorteoSeleccionada}"
+						pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha sorteo no es válida">
+						<p:ajax event="dateSelect"
+							listener="#{controladorReporteArbitrosDisponiblesParaSorteosView.onDateSelect}" />
+					</p:calendar>					
+					<p:outputLabel for="inputIdCaso" value="Código del caso" />			
+					<p:inputText id="inputIdCaso" value="#{controladorReporteArbitrosDisponiblesParaSorteosView.numeroCasoSeleccionado}" maxlength="18">
+						<p:keyFilter regEx="/[0-9_]/i" />					
+					</p:inputText>	
+				</p:panelGrid>
+				<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>					
+					<p:commandButton value="Exportar a Excel"
+						action="#{controladorReporteArbitrosDisponiblesParaSorteosView.generarExcel}"
+						icon="fa fa-file-excel-o"
+						disabled="#{controladorReporteArbitrosDisponiblesParaSorteosView.visible}"
+						ajax="false">
+					</p:commandButton>
+										
+					<h:commandButton
+						actionListener="#{controladorReporteArbitrosDisponiblesParaSorteosView.buscar}"
+						value="Buscar" update="growl" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" />
+					
+				</p:panelGrid>
+			</p:panel>
+			<p:panel>
+				<p:panelGrid columns="1" layout="grid">
+
+					<p:dataGrid id="tbl"  var="caso" paginator="true" rows="5"
+						rowsPerPageTemplate="5, 10, 20"
+						paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						value="#{controladorReporteArbitrosDisponiblesParaSorteosView.reporteArbitroParaSorteosDTO}"
+						columns="1"
+						emptyMessage="#{bundle.MensajeReporteSinResultado}">
+
+						<f:facet name="header">
+	            			OPERADORES SELECCIONADOS POR SORTEO
+	        			</f:facet>
+
+						<p:panel header="#{caso.idCaso} - #{caso.nombreCaso}" style="text-align:center">
+
+							<p:dataTable id="tblCaso" var="arbitro" value="#{caso}" emptyMessage="#{bundle.MensajeReporteSinResultado}">
+								<p:columnGroup type="header">
+									<p:row>
+										<p:column headerText="Fecha Sorteo" />
+										<p:column headerText="Código del caso" />
+										<p:column headerText="Partes del caso" />
+										<p:column headerText="Servicio" />
+										<p:column headerText="Consumo" />
+										<p:column headerText="Cuantía" />
+										<p:column headerText="Tipo de cuantía" />
+										<p:column headerText="Materia" />
+										<p:column headerText="Preselección" />
+										<p:column headerText="Preselección por las partes o por la CCB" />
+										<p:column headerText="Tipo de Sorteo" />
+										<p:column headerText="Liberación de lista" />
+										<p:column headerText="Funcionario que realizó el sorteo" />										
+									</p:row>
+								</p:columnGroup>
+								<p:column>
+									<h:outputText value="#{caso.fechaSorteo}">
+									</h:outputText>
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.idCaso}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.nombreCaso}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.tipoCaso}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.consumo}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.cuantia}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.tipoCuantia}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.materia}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.preseleccion}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.tipoPreseleccion}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.tipoSorteo}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.liberacionLista}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{caso.funcionarioSorteo}" />
+								</p:column>								
+							</p:dataTable>
+
+							<p:dataTable id="tblArb" var="arbitro" value="#{caso.arbitros}" emptyMessage="#{bundle.MensajeReporteSinResultado}">
+								<p:columnGroup type="header">
+									<p:row>
+										<p:column headerText="Nombre" />
+										<p:column headerText="Nombrado previamente" />
+										<p:column headerText="Designado en el sorteo" />
+										<p:column headerText="Número aleatorio designado para el sorteo" />
+										<p:column headerText="Liberado" />
+									</p:row>
+								</p:columnGroup>
+
+								<p:column>
+									<h:outputText value="#{arbitro.nombre}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{arbitro.nombradoPreviamente}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{arbitro.designadoSorteo}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{arbitro.numeroAleatorioDesignado}" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{arbitro.liberado}" />
+								</p:column>
+							</p:dataTable>
+
+						</p:panel>
+						
+						<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteArbitrosDisponiblesParaSorteosView.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>	
+
+					</p:dataGrid>
+
+				</p:panelGrid>
+			</p:panel>
+		</h:form>
+	</h:body>
+</ui:composition>

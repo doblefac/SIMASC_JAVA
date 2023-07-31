@@ -1,0 +1,172 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+		<p:panel id="infoCaso" header="Información del caso"
+			style="margin-bottom:20px">
+
+			<h:panelGrid columns="2" >
+				<h:outputText 
+					value="Identificador del caso:" />
+				<h:outputText
+					value="#{controladorSorteoView.audiencia.caso.idCaso}" />
+					
+				<h:outputText
+					value="Nombre del caso:" rendered="#{controladorSorteoView.vistaNombreCaso}"/>
+				<h:outputText
+					value="#{controladorSorteoView.audiencia.caso.nombre}" rendered="#{controladorSorteoView.vistaNombreCaso}" />	
+					
+				<h:outputText
+					value="Materia:" rendered="#{controladorSorteoView.vistaMateria}"/>
+				<h:outputText
+					value="#{controladorSorteoView.audiencia.caso.servicioMateria.materia.nombre}" rendered="#{controladorSorteoView.vistaMateria}"/>
+						
+				<h:outputText
+					value="Cuantía:" rendered="#{controladorSorteoView.vistaCuantia}"/>
+				<h:outputText
+					value="#{controladorSorteoView.audiencia.caso.textoTipoCuantia}" rendered="#{controladorSorteoView.vistaCuantia}"/>	
+					
+				<h:outputText
+					value="Valor de la cuantía:" rendered="#{controladorSorteoView.vistaCuantia}">
+				</h:outputText>				
+				<h:outputText
+					value="#{controladorSorteoView.audiencia.caso.valorPretencionesValidacion}" rendered="#{controladorSorteoView.vistaCuantia}">
+				</h:outputText>
+				
+				<h:outputText
+					value="Servicio:" />
+				<h:outputText
+					value="#{controladorSorteoView.audiencia.caso.servicioMateria.servicio.nombre}" />	
+				
+					
+					<h:outputText rendered="#{controladorSorteoView.esPeritaje}"
+					value="Tipo de peritaje:" />
+					<h:outputText rendered="#{controladorSorteoView.esPeritaje}"
+					value="#{controladorSorteoView.tipoPeritaje}" />
+				
+				
+					
+				<h:outputText
+					value="Fecha de solicitud:" rendered="#{controladorSorteoView.vistaFechaSolicitud}"/>
+				<h:outputText value="#{controladorSorteoView.audiencia.caso.fechaRadicacion}" rendered="#{controladorSorteoView.vistaFechaSolicitud}">
+					<f:convertDateTime pattern="dd/MM/yyyy" />
+				</h:outputText>
+				
+			</h:panelGrid>
+		</p:panel>
+		
+		<p:panel id="infoSorteo" header="Información del sorteo"
+			style="margin-bottom:20px">
+			
+			<h:panelGrid columns="2">
+				<h:outputText
+					value="Cantidad de principales a designar:" />
+				<h:outputText
+					value="#{controladorSorteoView.audiencia.cantidadPrincipales}" />
+					
+				<h:outputText
+					value="Cantidad de suplentes a designar:" />
+				<h:outputText
+					value="#{controladorSorteoView.audiencia.cantidadSuplentes}" />
+						
+				<h:outputText value="Preselección de lista: " />
+				<h:outputText
+					value="#{controladorSorteoView.audiencia.caso.preseleccion ? 'SI' : 'NO'}" />
+				
+				<h:outputText value="Quien Preselecciona: " rendered = "#{controladorSorteoView.audiencia.caso.preseleccion}" />
+				
+				<h:outputText rendered = "#{controladorSorteoView.audiencia.caso.preseleccion}"
+					value="#{controladorSorteoView.quienPreselecciona}" />
+			</h:panelGrid>
+			
+		</p:panel>
+		
+		<ui:fragment rendered="#{ (not controladorSorteoView.audiencia.caso.preseleccion) or (not controladorSorteoView.preseleccionIndependiente)}">
+			<p:panel id="funcionariosDisp" header="Lista de disponibles"
+				style="margin-bottom:20px">
+				
+				<h:panelGrid columns="1">
+					<h:outputText value="Número de participantes: #{controladorSorteoView.personasSorteo.size()}" />
+				</h:panelGrid>
+	
+				<p:dataTable var="funcionario" rowIndexVar="rowIdP" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorSorteoView.personasSorteo}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true"
+					paginatorPosition="both"
+					rows="11"
+					style="margin-bottom:20px" scrollable="true" scrollWidth="100%"
+					width="100%"					
+					currentPageReportTemplate="{currentPage} de {totalPages}"				
+					rowStyleClass="#{funcionario.marcaAzulSorteo ? 'highlight' : null}">
+	
+					<p:column headerText="Lista de participantes">					
+						<h:outputText value="#{rowIdP + 1} - #{funcionario.nombreCompleto}" />
+					</p:column>
+				</p:dataTable>
+			
+			</p:panel>
+		</ui:fragment>
+		<ui:fragment rendered="#{controladorSorteoView.preseleccionIndependiente and (not controladorSorteoView.personasSorteoPreseleccionadosPrincipal.isEmpty()) and controladorSorteoView.personasSorteoPreseleccionadosPrincipal.size() > 0 }">
+        <p:panel id="funcionariosDispPrin"   header="Lista de participantes"	style="margin-bottom:20px">
+			<h:panelGrid columns="1">
+				<h:outputText value="Número de participantes: #{controladorSorteoView.personasSorteoPreseleccionadosPrincipal.size()}" />
+			</h:panelGrid>
+			
+			<p:dataTable var="funcionario" rowIndexVar="rowIdP" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+				value="#{controladorSorteoView.personasSorteoPreseleccionadosPrincipal}"
+				scrollable="true" scrollHeight="300"
+				rowStyleClass="#{funcionario.marcaAzulSorteo ? 'highlight' : null}">
+
+				<p:column  headerText="Lista de participantes para designación de principales">					
+					<h:outputText value="#{rowIdP + 1} - #{funcionario.nombreCompleto}" />
+				</p:column>
+			</p:dataTable>
+			
+			</p:panel>
+   		 </ui:fragment>
+   		<ui:fragment rendered="#{controladorSorteoView.preseleccionIndependiente and (not controladorSorteoView.personasSorteoPreseleccionadosSuplentes.isEmpty()) and controladorSorteoView.personasSorteoPreseleccionadosSuplentes.size() > 0 }">
+        <p:panel id="funcionariosDispSup"   header="Lista de árbitros/amigables componedores suplentes disponibles "	style="margin-bottom:20px">
+			
+			<h:panelGrid columns="1">
+				<h:outputText value="Número de participantes: #{controladorSorteoView.personasSorteoPreseleccionadosSuplentes.size()}" />
+			</h:panelGrid>
+			
+			<p:dataTable  var="funcionario" rowIndexVar="rowIdP" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+				value="#{controladorSorteoView.personasSorteoPreseleccionadosSuplentes}"
+				scrollable="true" scrollHeight="300"
+				rowStyleClass="#{funcionario.marcaAzulSorteo ? 'highlight' : null}">
+
+				<p:column  headerText="Lista de participantes para designación de suplentes">					
+					<h:outputText value="#{rowIdP + 1} - #{funcionario.nombreCompleto}" />
+				</p:column>
+			</p:dataTable>
+			
+			</p:panel>
+   		 </ui:fragment>
+		
+
+
+		<h4><p:outputLabel value="#{controladorSorteoView.mensajeSorteo}"></p:outputLabel></h4>
+    	<p:commandButton value="Realizar Sorteo" id="sortearBtn" 
+    		disabled="#{controladorSorteoView.botonSorteoDisabled}" 
+    		actionListener="#{controladorSorteoView.sortear}" update="frmListaCasos" >
+    	</p:commandButton>
+    	
+    	<p:blockUI block="basic2" trigger="sortearBtn">    		
+			<div class="spinner">
+				<div class="double-bounce1"></div>
+				<div class="double-bounce2"></div>
+			</div>
+			<div class="please-wait">Realizando Sorteo...</div>
+    	</p:blockUI>
+    	
+    	<p:commandButton value="Atrás"  id="otros" actionListener="#{controladorSorteoView.pantallaInicial()}" update="frmListaCasos">
+	    </p:commandButton>	    	    
+
+		
+
+	
+</ui:composition>

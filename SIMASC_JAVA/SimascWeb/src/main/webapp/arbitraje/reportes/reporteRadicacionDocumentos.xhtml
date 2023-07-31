@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+<title>ReporteRadicacionDocumentos</title>
+</h:head>
+<h:body >
+	<f:event listener="#{controladorReporteRadicacionDocumentosView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<h:form>
+	<p:remoteCommand  id="reset" name="reset" action="#{controladorRadicacionDocumentosView.postConstruct}"/>
+		<p:panel id="infoCaso" header="Radicacion de documentos"
+			style="margin-bottom:20px">
+
+			<p:panelGrid columns="4"  columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"  styleClass="contentGrid"   cellspacing="10"  layout="grid">
+				<p:outputLabel for="fechaIni" value="Fecha Inicial" />
+				<p:calendar id="fechaIni" locale="es"
+					value="#{controladorReporteRadicacionDocumentosView.fechaInicialSeleccionada}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha inicial no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteRadicacionDocumentosView.onDateSelect}" />
+				</p:calendar>
+
+				<p:outputLabel for="fechaFin" value="Fecha Final" />
+				<p:calendar id="fechaFin" locale="es"
+					value="#{controladorReporteRadicacionDocumentosView.fechaFinSeleccionada}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha final no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteRadicacionDocumentosView.onDateSelectF}" />
+				</p:calendar>
+				<p:outputLabel for="nombreDocumento" value="Nombre del documento" />
+				<p:inputText value="#{controladorReporteRadicacionDocumentosView.nombreDocumento}"
+					id="nombreDocumento" maxlength="150">
+				</p:inputText>	
+				<p:outputLabel for="codigoCaso" value="Código del caso" />				
+				<p:inputText id="codigoCaso" value="#{controladorReporteRadicacionDocumentosView.codigoCaso}" maxlength="18">
+					<p:keyFilter regEx="/[0-9_]/i" />					
+				</p:inputText>
+					<p:outputLabel for="nombreCaso" value="Nombre del caso" />
+				<p:inputText value="#{controladorReporteRadicacionDocumentosView.nombreCaso}"
+					id="nombreCaso" maxlength="150">
+				</p:inputText>	
+					
+													
+			</p:panelGrid>
+			<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+				<div></div>
+				<p:commandButton value="Exportar a Excel"
+					 icon="fa fa-file-excel-o" disabled="#{controladorReporteRadicacionDocumentosView.visible}" ajax="false">
+					<p:dataExporter type="xls" target="tbl"
+						fileName="#{controladorReporteRadicacionDocumentosView.nombreReporte}" 
+						postProcessor="#{controladorReporteRadicacionDocumentosView.generarXLS}" />
+				</p:commandButton>
+				<h:commandButton update="growl"
+					actionListener="#{controladorReporteRadicacionDocumentosView.botonBuscar}"
+					value="Buscar" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" />
+				.
+					
+			</p:panelGrid>	
+		</p:panel>
+		<p:panel>		
+			<p:panelGrid columns="1" layout="grid">
+
+				<p:dataTable id="tbl" var="reporteD" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorReporteRadicacionDocumentosView.reporteRadicadoDocumentos}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" style="margin-bottom:20px"
+					scrollable="true" scrollWidth="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}"
+					rows="10" rowsPerPageTemplate="5,10,20"
+					rowIndexVar="rowIndex">
+
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Consecutivo" />
+						</f:facet>
+						<h:outputText  value="#{rowIndex+1}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Código del caso" />
+						</f:facet>
+						<h:outputText value="#{reporteD.codigoCaso}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Nombre del caso" />
+						</f:facet>
+						<h:outputText value="#{reporteD.nombreCaso}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Servicio" />
+						</f:facet>
+						<h:outputText value="#{reporteD.servicioCaso}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Tipo Documento" />
+						</f:facet>
+						<h:outputText value="#{reporteD.tipoDocumento}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Nombre Documento" />
+						</f:facet>
+						<h:outputText value="#{reporteD.nombreDocumento}" />
+					</p:column>
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Fecha comunicacion documento" />
+						</f:facet>
+						<h:outputText value="#{reporteD.fechaComunicacion}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Fecha radicación caso" />
+						</f:facet>
+						<h:outputText value="#{reporteD.fechaRadicacion}" />
+					</p:column>
+
+					
+
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Apoderado demandante" />
+						</f:facet>
+						<h:outputText value="#{reporteD.apoderadoDemandante}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Apoderado demandado" />
+						</f:facet>
+						<h:outputText value="#{reporteD.apoderadoDemandado}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Árbitros" />
+						</f:facet>
+						<h:outputText value="#{reporteD.arbitros}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Secretario" />
+						</f:facet>
+						<h:outputText value="#{reporteD.secretario}" />
+					</p:column>
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Abogado" />
+						</f:facet>
+						<h:outputText value="#{reporteD.abogados}" />
+					</p:column>
+					
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Consumo" />
+						</f:facet>
+						<h:outputText value="#{reporteD.consumo}" />
+					</p:column>
+
+					
+					
+					<f:facet name="footerD">
+							<h:outputText value="Total registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteRadicacionDocumentosView.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+				</p:dataTable>
+			</p:panelGrid>
+		</p:panel>
+	</h:form>
+</h:body>
+</ui:composition>

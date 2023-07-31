@@ -1,0 +1,729 @@
+package com.ccb.simasc.web.controladores;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
+import javax.faces.application.FacesMessage;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ViewScoped;
+import javax.faces.context.FacesContext;
+import com.ccb.simasc.comun.fachada.interfaces.IRealizacionSorteoFacade;
+import com.ccb.simasc.transversal.dto.PersonaDTO;
+import com.ccb.simasc.transversal.entidades.Audiencia;
+import com.ccb.simasc.transversal.entidades.Caso;
+import com.ccb.simasc.transversal.entidades.ParametroServicioSorteo;
+import com.ccb.simasc.transversal.entidades.ParametroSorteo;
+import com.ccb.simasc.transversal.entidades.Persona;
+import com.ccb.simasc.transversal.entidades.PersonaServicioMateria;
+import com.ccb.simasc.transversal.utilidades.GestionEventosServicio;
+import com.ccb.simasc.transversal.utilidades.MensajesEnum;
+import com.ccb.simasc.transversal.utilidades.MensajesSimasc;
+import com.ccb.simasc.transversal.utilidades.UtilConstantes;
+import com.ccb.simasc.transversal.utilidades.UtilDominios;
+import com.ccb.simasc.web.comun.BaseMBean;
+
+/**
+ * Bean encargado de realizar sorteos para los casos configurados
+ * @author lvalbuena@asesoftware.com
+ *
+ */
+@ManagedBean(name = "controladorSorteoView")
+@ViewScoped
+public class ControladorSorteo extends BaseMBean {	
+	
+	//-------------------------------------------------------------------------
+	// CONSTANTES
+	//-------------------------------------------------------------------------
+	private static final long serialVersionUID = 1L;
+	public static final String PANTALLA_PRIMERA = "primera";
+	public static final String PANTALLA_SEGUNDA = "segunda";
+	public static final String PANTALLA_TERCERA = "tercera";	
+	
+	
+	//-------------------------------------------------------------------------
+	// ATRIBUTOS
+	//-------------------------------------------------------------------------
+	
+
+	/**
+	 * Bean de negocio encargado de realizar operaciones de sorteo
+	 */
+	@EJB
+	private IRealizacionSorteoFacade sorteoFacade;	
+	
+	@EJB
+	private GestionEventosServicio gestionEventosServicio;			
+	
+	/**
+	 * lista de personas habilitadas para el sorteo
+	 */
+	private List<Persona> personasSorteo;
+	
+	/**
+	 * lista de arbitros seleccionados para el caso
+	 */
+	private List<Persona> arbitrosSeleccionados;
+	
+	/**
+	 * Representa la audiencia seleccionada para realizar el 
+	 * sorteo
+	 */
+	private Audiencia audiencia;	
+	
+	/**
+	 * indica si se habilita o no el boton para realizar sorteo
+	 */
+	private boolean botonSorteoDisabled;			
+	
+	/**
+	 * Lista de audiencias del dia de sorteo
+	 */
+	private List<Audiencia> audienciasDia;
+	
+	/**
+	 * audiencia seleccionada para cancelar
+	 */
+	private Audiencia audienciaCancelar;
+	
+	/**
+	 * cantidad de casos sorteados en el dia
+	 */
+	private int casosSorteados;
+	
+	/**
+	 * cantidad de casos pendientes por sortear
+	 */
+	private int casosPorSortear;	
+		
+	/**
+	 * indica el motivo por el cual se cancela el sorteo
+	 * para el caso seleccionado 
+	 */
+	private String motivoCancelacion;
+	
+	/**
+	 * indica si se puede o no realizar liberacion 
+	 * de lista
+	 */
+	private boolean liberoLista;
+	
+	/**
+	 * lista donde se encuentran las personas a las cuales
+	 * se les realizo liberacion de lista
+	 */
+	private List<PersonaServicioMateria> personasLiberacion;
+	
+	/**
+	 * indica la pantalla actual en la que se encuentra
+	 * el usuario
+	 */
+	private String pantalla;
+	
+	/**
+	 * Fecha actual
+	 */
+	private Calendar fechaActual;
+	
+	/**
+	 * Indica si existen casos a sortear para el
+	 * dia en curso
+	 */
+	private boolean fechaConsultaValida;	
+	
+	/**
+	 * id del usuario de sesion activo
+	 */
+	private String usuarioSesion;
+	
+	/**
+	 * indica si la persona en session puede o no realizar sorteos
+	 */
+	private boolean puedeRealizarSorteos;
+	
+	
+	//-------------------------------------------------------------------------
+	// METODOS
+	//-------------------------------------------------------------------------
+
+	/**
+	 * Constructor del MBean
+	 */
+	public ControladorSorteo() {
+		
+	}
+	
+	/**
+	 * Metodo de inicio de modulo
+	 */
+	public void preRenderComp() {
+		this.postConstruct();		
+	}
+	
+	
+	
+	/**
+	 * limpia imformacion cuando se cambie de pantalla
+	 */
+	private void limpiar() {
+		this.arbitrosSeleccionados = new ArrayList<Persona>();
+		this.personasSorteo = new ArrayList<Persona>();
+		this.personasLiberacion = null;
+		this.liberoLista = false;
+		this.botonSorteoDisabled = false;
+	}
+
+	/**
+	 * inicia la informacion para la realizacion de sorteo 
+	 */
+	@PostConstruct
+	public void postConstruct() {
+		usuarioSesion = this.getUserNameSession();
+		audiencia = null;		
+		fechaConsultaValida = true;		
+		fechaActual = Calendar.getInstance();
+		botonSorteoDisabled = false;
+		this.limpiar();
+		this.consultarAudienciasSorteo();		
+		actualizarIndicadores();
+		this.puedeRealizarSorteos = this.tienePermisosSorteo();
+		pantalla = PANTALLA_PRIMERA;
+	}
+	
+	/**
+	 * Consulta las audiencias las cuales se encuentran disponibles para realizar sorteo
+	 */
+	private void consultarAudienciasSorteo() {
+		audienciasDia = sorteoFacade.consultarAudienciasSorteoDelDia(fechaActual.getTime());		
+		if (audienciasDia.size() <= 0) {
+			fechaConsultaValida = false;
+		}
+	}
+	
+	/**
+	 * Verifica si el número de casos es mayor a cero y si no es así despliega un mensaje en pantalla.
+	 */
+	public void validarNumeroCasos() {
+		if(audienciasDia.size() == 0) {				
+			FacesContext context = FacesContext.getCurrentInstance();	         
+	        context.addMessage(null, new FacesMessage(UtilConstantes.ENCABEZADO_MENSAJE_INFORMATIVO,  
+	        		MensajesSimasc.getInstancia().getMensajePorKey(MensajesEnum.INFO022.toString())));
+		}
+	}
+	
+	/**
+	 * Actualiza los valores de los casos sorteados y de los casos por sortear
+	 */
+	private void actualizarIndicadores(){
+		casosSorteados = calcularCasosSorteados();
+		casosPorSortear = calcularCasosParaSorteo();
+	}
+	
+	
+	/**
+	 * Consulta los parametros de servicio y se los carga al caso
+	 * seleccionado
+	 */
+	private void cargarParamServSorteo () {
+		ParametroSorteo parametrosSort = sorteoFacade.consultarParametrosSorteo();
+		for (ParametroServicioSorteo paramServicio : parametrosSort.getParametroServicioSorteoList()) {
+			if (paramServicio.getIdServicio() == this.audiencia.getCaso().getIdServicio()) {
+				this.audiencia.getCaso().setParametroServSorteo(paramServicio);			
+				break;
+			}
+		}
+	}
+	
+	/**
+	 * Redirecciona al detalle del caso si el caso esta disponible para sorteo, de lo contrario, 
+	 * despliega un mensaje al usuario indicando que el sorteo ha sido cancelado
+	 * @param caso
+	 */
+	public void redireccionarADetalleCaso(Audiencia audiencia) {
+		this.limpiar();	
+		//se consulta la udiencia directamente en la db por si se registraron cambios. SEGURIDAD
+		this.audiencia = this.sorteoFacade.obtenerAudiencia(audiencia.getIdAudiencia());
+		
+		if (!this.audiencia.isAudienciaRealizada()) {
+			this.audiencia.getCaso().setNombramientoSorteo(
+					this.sorteoFacade.obtenerNombramientoPersonaCaso(audiencia.getCaso()));
+			this.cargarParamServSorteo();
+			this.buscarCasoConformacionLista();
+			this.permisosSorteo();
+			pantalla = PANTALLA_SEGUNDA;
+		} else {
+			String msg = MensajesSimasc.getInstancia().getMensajePorKey(MensajesEnum.ERROR126.toString());
+			FacesContext context = FacesContext.getCurrentInstance();
+			context.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN, 
+					UtilConstantes.ENCABEZADO_MENSAJE_ADVERTENCIA, msg));			
+		}				
+	}
+	
+	/**
+	 * Valida si cuenta con permisos para realizar el sorteo, si no es asi
+	 * muestra mensaje
+	 */
+	private void permisosSorteo() {
+		if (!this.puedeRealizarSorteos) {
+			String msg = MensajesSimasc.getInstancia().getMensajePorKey(MensajesEnum.ERROR127.toString());
+			FacesContext context = FacesContext.getCurrentInstance();
+			context.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN, 
+					UtilConstantes.ENCABEZADO_MENSAJE_ADVERTENCIA, msg));			
+		}
+	}
+
+	/**
+	 * Devuelve verdadero si la audiencia de sorteo del día para el caso del parámetro está en estado cancelado o realizado. 
+	 * Esto implica que no pueda ser cancelada.
+	 * @param caso
+	 * @return
+	 */
+	public boolean validarCancelacionAudiencia(Caso caso){
+		Audiencia audiencia = caso.getAudienciaSorteoDelDia(fechaActual.getTime());
+		return audiencia.enEstadoCancelado() || audiencia.isAudienciaRealizada();
+	}	
+
+	/**
+	 * Calcula el número de casos del día que ya han sido sorteados
+	 * @return 
+	 */
+	private int calcularCasosSorteados() {
+		int conteoCasos = 0;		
+		for (Audiencia audiencia : audienciasDia) {
+			if (UtilDominios.ESTADO_AUDIENCIA_REALIZADA.equalsIgnoreCase(
+					audiencia.getEstado())) {
+				conteoCasos++;
+			}
+		}
+	    return conteoCasos;
+	}
+		
+	/**
+	 * Calcula el número de casos del día que están pendientes de sorteo
+	 * @return 
+	 */
+	private int calcularCasosParaSorteo() {
+		int conteoCasos = 0;		
+		for (Audiencia audiencia : audienciasDia) {
+			if (UtilDominios.ESTADO_AUDIENCIA_PENDIENTE.equalsIgnoreCase(
+					audiencia.getEstado())) {
+				conteoCasos++;
+			}
+		}
+	    return conteoCasos;
+	}	
+
+
+	/**
+	 * Cancela el sorteo publico de designación del caso seleccionado
+	 */
+	public void cancelarSorteoCaso() {
+		String msg = audienciaCancelar.getObservaciones() + ";" + motivoCancelacion;
+		audienciaCancelar.setObservaciones(msg);
+		sorteoFacade.cancelarSorteoCaso(audienciaCancelar);		
+		gestionEventosServicio.registrarEvento(audienciaCancelar.getCaso(),
+				UtilDominios.ESTADO_CASO_CANCELADO, motivoCancelacion, usuarioSesion);
+		this.consultarAudienciasSorteo();
+		this.actualizarIndicadores();
+	}	
+	
+	/**
+	 * Consulta las personas preseleccionadas para realizar
+	 * el sorteo
+	 */
+	private void cargaPreseleccionados() {
+		personasSorteo = sorteoFacade.obtenerPreseleccionados(this.audiencia.getCaso());
+		this.ordenarPersonasSorteo();
+		
+		if (!sorteoFacade.validarCantidadMinArb(personasSorteo, this.audiencia.getCaso())) {
+			this.botonSorteoDisabled = true;
+			String msg = MensajesSimasc.getInstancia().getMensajePorKey(MensajesEnum.ERROR123.toString()); 
+			FacesContext context = FacesContext.getCurrentInstance();
+			context.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN, UtilConstantes.ENCABEZADO_MENSAJE_ADVERTENCIA, msg));
+		}
+	}
+	
+	/**
+	 * realiza la conformacion de lista de funcionarios para realizar sorteo 
+	 * teniendo en cuenta los parametros de sorteo
+	 */
+	private void conformarListaFuncionarioSorteo() {
+		personasSorteo = sorteoFacade.getConformarListaFuncionarioSorteo(this.audiencia.getCaso(), false);
+		this.ordenarPersonasSorteo();				
+		
+		if (!sorteoFacade.validarCantidadMinArb(personasSorteo, this.audiencia.getCaso())) {
+			
+			//simula la liberacion de lista
+			if (sorteoFacade.simulariberacionLista(this.audiencia.getCaso())) {
+				this.botonSorteoDisabled = false;
+				this.liberoLista = true;
+				//se muestra mensaje al usuario de liberacion de lista
+				FacesContext context = FacesContext.getCurrentInstance();	         
+				context.addMessage(null, new FacesMessage(UtilConstantes.ENCABEZADO_MENSAJE_INFORMATIVO,  
+						MensajesSimasc.getInstancia().getMensajePorKey(
+						MensajesEnum.ERROR121.toString())));
+			} else {
+				this.botonSorteoDisabled = true;
+				FacesContext context = FacesContext.getCurrentInstance();	         
+				context.addMessage(null, new FacesMessage(UtilConstantes.ENCABEZADO_MENSAJE_ADVERTENCIA,  
+						MensajesSimasc.getInstancia().getMensajePorKey(
+						MensajesEnum.ERROR122.toString())));
+			}			
+		}		
+	}
+	
+	/**
+	 * Ordena de forma alfabetica a las personas que van a participar
+	 * en el sorteo
+	 */
+	private void ordenarPersonasSorteo() {
+		Collections.sort(personasSorteo, new Comparator<Persona>() {
+	        @Override
+	        public int compare(Persona p1, Persona p2) {
+	            return  p1.getPrimerNombreORazonSocial().compareTo(p2.getPrimerNombreORazonSocial());
+	        }
+	    });		
+	}
+
+	/**
+	 * Metodo encargado de de buscar y calcular los arbitros para un sorteo teniendo
+	 * en cuenta si el caso maneja por preseleccion o no
+	 * 
+	 */
+	public void buscarCasoConformacionLista() {		
+		this.liberoLista = false;
+		
+		if (this.audiencia.getCaso().getPreseleccion()) {			
+			this.cargaPreseleccionados();			
+		} else {
+			this.conformarListaFuncionarioSorteo();			
+		}
+	}	
+	
+	/**
+	 * 
+	 * @param personaDTOs
+	 * @return
+	 */
+	public Long funcionariosHabilitadosSorteo(List<PersonaDTO> personaDTOs){
+		int cantidad = 0;
+		for (PersonaDTO it : personaDTOs) {
+			if (!it.isEsMediador()) {
+				cantidad++;
+			}
+		}
+		return (long) cantidad;
+	}
+
+	/**
+	 * Realiza el sorteo para el caso con las personas seleccionadas
+	 */
+	public void sortear() {
+		//se consulta la udiencia directamente en la db por si se registraron cambios. SEGURIDAD
+		Audiencia audienciaVal = this.sorteoFacade.obtenerAudiencia(this.audiencia.getIdAudiencia());
+		if (!audienciaVal.isAudienciaRealizada()) {
+			if (this.liberoLista) {
+				this.sorteoConLiberacionDeLista();
+			} else {
+				this.audiencia.getCaso().setParticipantesSorteo(personasSorteo);
+												
+				this.arbitrosSeleccionados = sorteoFacade.realizarSorteo(personasSorteo,
+						this.audiencia.getCaso().getNombramientoSorteo().getCantFuncionariosPrincipales(),
+						this.audiencia.getCaso().getNombramientoSorteo().getCantFuncionariosSuplentes());
+			}
+			sorteoFacade.registrarResultSorteo(audiencia, this.arbitrosSeleccionados, usuarioSesion);
+						
+			this.actualizarIndicadores();
+			pantalla = PANTALLA_TERCERA;
+			
+		} else {
+			String msg = MensajesSimasc.getInstancia().getMensajePorKey(MensajesEnum.ERROR126.toString());
+			FacesContext context = FacesContext.getCurrentInstance();
+			context.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN, 
+					UtilConstantes.ENCABEZADO_MENSAJE_ADVERTENCIA, msg));
+			pantalla = PANTALLA_PRIMERA;
+		}
+	}
+	
+	/**
+	 * El sorteo se debe realizar con liberacion de lista,
+	 * primero se sortean los las personas preseleccionadas
+	 * y despues los arbitros faltantes se toman de la lista de liberacion
+	 */
+	private void sorteoConLiberacionDeLista() {		
+		this.audiencia.getCaso().setLiberoLista(true);
+		
+		int cantFuncionariosPrincipales = this.audiencia.getCaso().getNombramientoSorteo().getCantFuncionariosPrincipales();
+		int cantFuncionariosSuplentes = this.audiencia.getCaso().getNombramientoSorteo().getCantFuncionariosSuplentes();
+									
+		//se realiza sorteo con las personas calculadas inicialmente		
+		//se realiza calculo de cuantos principales y suplentes se necesitan para este sorteo
+		int cantPrin = 0;
+		int cantSup = 0;
+		int i = 1;
+		for (Persona persona : personasSorteo) {
+			if (!persona.isMarcaAzulSorteo()) {
+				if(i <= cantFuncionariosPrincipales) {
+					cantPrin++;
+				} else {
+					cantSup++;
+				}
+				i++;
+			}
+		}		
+		this.audiencia.getCaso().setParticipantesSorteo(personasSorteo);
+		this.arbitrosSeleccionados = sorteoFacade.realizarSorteo(personasSorteo,
+				cantPrin, cantSup);
+		
+		//se obtienen las personas liberadas
+		personasLiberacion = sorteoFacade.liberarListaSorteo(this.audiencia.getCaso(), usuarioSesion);
+		this.audiencia.getCaso().setHoraLiberacion(new Date());
+		
+		List<Persona> personasLiberadas = new ArrayList<Persona>();
+		for (PersonaServicioMateria psm : personasLiberacion) {
+			personasLiberadas.add(psm.getPersona());
+		}
+							
+		//se realiza el sorteo con las personas liberadas
+		int faltantesPrincipales = cantFuncionariosPrincipales - cantPrin;
+		int faltantesSuplentes = cantFuncionariosSuplentes - cantSup;
+		
+		this.audiencia.getCaso().setParticipantesSorteoLiberacion(personasLiberadas);
+		List<Persona> personasRestantes = sorteoFacade.realizarSorteo(personasLiberadas, 
+				faltantesPrincipales, faltantesSuplentes);
+		
+		//se agregan los arbitros restantes
+		for (Persona persona : personasRestantes) {
+			if (UtilConstantes.NOMBRAMIENTO_PRINCIPAL.equals(persona.getNombradoComo())) {
+				persona.setNombradoComoPos(++cantPrin);
+			} else {
+				persona.setNombradoComoPos(++cantSup);
+			}
+			this.arbitrosSeleccionados.add(persona);
+		}		
+	}
+	
+	/**
+	 * Metodo para ir a la pantalla inicial del sorteo
+	 */
+	public void pantallaInicial() {
+		pantalla = PANTALLA_PRIMERA;
+	}
+
+
+	public boolean isBotonSorteoDisabled() {
+		if (!this.puedeRealizarSorteos) {
+			botonSorteoDisabled = true;
+		}
+		return botonSorteoDisabled;
+	}
+
+	public void setBotonSorteoDisabled(boolean botonSorteoDisabled) {
+		this.botonSorteoDisabled = botonSorteoDisabled;
+	}
+
+
+	/**
+	 * @return the casosSorteados
+	 */
+	public int getCasosSorteados() {
+		return casosSorteados;
+	}
+
+	/**
+	 * @param casosSorteados the casosSorteados to set
+	 */
+	public void setCasosSorteados(int casosSorteados) {
+		this.casosSorteados = casosSorteados;
+	}
+
+	/**
+	 * @return the casosPorSortear
+	 */
+	public int getCasosPorSortear() {
+		return casosPorSortear;
+	}
+
+	/**
+	 * @param casosPorSortear the casosPorSortear to set
+	 */
+	public void setCasosPorSortear(int casosPorSortear) {
+		this.casosPorSortear = casosPorSortear;
+	}
+
+
+	/**
+	 * @return the motivoCancelacion
+	 */
+	public String getMotivoCancelacion() {
+		return motivoCancelacion;
+	}
+
+	/**
+	 * @param motivoCancelacion the motivoCancelacion to set
+	 */
+	public void setMotivoCancelacion(String motivoCancelacion) {
+		this.motivoCancelacion = motivoCancelacion;
+	}
+
+	/**
+	 * @return the pantalla
+	 */
+	public String getPantalla() {
+		//TODO validar sesion
+//		String pantallaSession = (String)this.obtenerVariableSesion(
+//				UtilConstantes.PANTALLA_SESSION_ATTRIBUTE_KEY);
+//		if (pantallaSession != null) {
+//			pantalla = pantallaSession;
+//		}
+		return pantalla;
+	}
+
+	/**
+	 * @param pantalla the pantalla to set
+	 */
+	public void setPantalla(String pantalla) {
+		this.pantalla = pantalla;
+	}
+
+	/**
+	 * @return the fechaActual
+	 */
+	public Calendar getFechaActual() {
+		return fechaActual;
+	}
+
+	/**
+	 * @param fechaActual the fechaActual to set
+	 */
+	public void setFechaActual(Calendar fechaActual) {
+		this.fechaActual = fechaActual;
+	}
+
+
+	/**
+	 * @return the fechaConsultaValida
+	 */
+	public boolean isFechaConsultaValida() {
+		return fechaConsultaValida;
+	}
+
+	/**
+	 * @param fechaConsultaValida the fechaConsultaValida to set
+	 */
+	public void setFechaConsultaValida(boolean fechaConsultaValida) {
+		this.fechaConsultaValida = fechaConsultaValida;
+	}
+
+	/**
+	 * @return the audienciasDia
+	 */
+	public List<Audiencia> getAudienciasDia() {
+		return audienciasDia;
+	}
+
+	/**
+	 * @param audienciasDia the audienciasDia to set
+	 */
+	public void setAudienciasDia(List<Audiencia> audienciasDia) {
+		this.audienciasDia = audienciasDia;
+	}
+
+	/**
+	 * @return the personasSorteo
+	 */
+	public List<Persona> getPersonasSorteo() {
+		return personasSorteo;
+	}
+
+	/**
+	 * @param personasSorteo the personasSorteo to set
+	 */
+	public void setPersonasSorteo(List<Persona> personasSorteo) {
+		this.personasSorteo = personasSorteo;
+	}
+
+	/**
+	 * @return the audienciaCancelar
+	 */
+	public Audiencia getAudienciaCancelar() {
+		return audienciaCancelar;
+	}
+
+	/**
+	 * @param audienciaCancelar the audienciaCancelar to set
+	 */
+	public void setAudienciaCancelar(Audiencia audienciaCancelar) {
+		this.audienciaCancelar = audienciaCancelar;
+	}
+
+	/**
+	 * @return the liberoLista
+	 */
+	public boolean isLiberoLista() {
+		return liberoLista;
+	}
+
+	/**
+	 * @param liberoLista the liberoLista to set
+	 */
+	public void setLiberoLista(boolean liberoLista) {
+		this.liberoLista = liberoLista;
+	}
+
+	/**
+	 * @return the arbitrosSeleccionados
+	 */
+	public List<Persona> getArbitrosSeleccionados() {
+		return arbitrosSeleccionados;
+	}
+
+	/**
+	 * @param arbitrosSeleccionados the arbitrosSeleccionados to set
+	 */
+	public void setArbitrosSeleccionados(List<Persona> arbitrosSeleccionados) {
+		this.arbitrosSeleccionados = arbitrosSeleccionados;
+	}
+
+	/**
+	 * @return the audiencia
+	 */
+	public Audiencia getAudiencia() {
+		return audiencia;
+	}
+
+	/**
+	 * @param audiencia the audiencia to set
+	 */
+	public void setAudiencia(Audiencia audiencia) {
+		this.audiencia = audiencia;
+	}
+	
+	/**
+	 * Mensaje para los casos sorteados
+	 * @return
+	 */
+	public String getMensajeSorteo() {
+		return MensajesSimasc.getInstancia().getMensajePorKey(
+				MensajesEnum.INFO071.toString());
+	}
+
+	/**
+	 * @return the usuarioSesion
+	 */
+	public String getUsuarioSesion() {
+		return usuarioSesion;
+	}
+
+	/**
+	 * @param usuarioSesion the usuarioSesion to set
+	 */
+	public void setUsuarioSesion(String usuarioSesion) {
+		this.usuarioSesion = usuarioSesion;
+	}
+}

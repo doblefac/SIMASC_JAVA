@@ -1,0 +1,64 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+	
+	<f:event listener="#{controladorSorteoView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<p:panel id="pListaCasos"
+		header="Lista de casos para sorteo de designación"
+		style="margin-bottom:20px"
+		rendered="#{controladorSorteoView.fechaConsultaValida}"	>
+		<p:dataTable id="tListaCasos" var="audiencia" value="#{controladorSorteoView.audienciasDia}"
+			scrollable="true" 
+			rowStyleClass="#{(audiencia.audienciaRealizada) ? 'highlight1' : null}">
+			
+			<p:column headerText="Código del Caso" style="width:80px;">
+				<p:commandLink id="clCaso" disabled="#{audiencia.audienciaRealizada}"
+					action="#{controladorSorteoView.redireccionarADetalleCaso(audiencia)}"
+					process="@this" update=":frmListaCasos">
+					<h:outputText value="#{audiencia.caso.idCaso}" />
+				</p:commandLink>
+			</p:column>
+			<p:column headerText="Nombre del caso" style="width:300px;"  rendered="#{controladorSorteoView.vistaNombreCaso}">
+				<h:outputText value="#{audiencia.caso.nombre}" />
+			</p:column>
+			<p:column headerText="Servicio" style="width:150px;">
+				<h:outputText value="#{audiencia.caso.servicioMateria.servicio.nombre}" />
+			</p:column>
+			<p:column headerText="Materia" rendered="#{controladorSorteoView.vistaMateria}">
+				<h:outputText value="#{audiencia.caso.servicioMateria.materia.nombre}" />
+			</p:column>
+			<p:column headerText="Cuantía" rendered="#{controladorSorteoView.vistaCuantia}">
+				<h:outputText value="#{audiencia.caso.textoTipoCuantia}" />
+			</p:column>
+			<p:column headerText="Acción" style="width:100px;">
+				<p:commandButton value="Cancelar" id="cbCancelar"
+					disabled="#{audiencia.audienciaRealizada}"					
+					action="#{controladorSorteoView.setAudienciaCancelar(audiencia)}"
+					oncomplete="PF('dlgConfirmacionCancelacion').show();"
+					update=":dlgConfirmacionCancelacion" />
+			</p:column>
+		</p:dataTable>
+
+		<h:panelGrid columns="4" cellpadding="5">
+			<h:outputLabel for="otCasosPorSortear" value="Casos por sorteo:" />
+			<h:outputText id="otCasosPorSortear"
+				value="#{controladorSorteoView.casosPorSortear}" />
+
+			<h:outputLabel for="otCasosSorteados" value="Casos sorteados:" />
+			<h:outputText id="otCasosSorteados"
+				value="#{controladorSorteoView.casosSorteados}" />
+		</h:panelGrid>
+
+	</p:panel>
+	
+
+	<p:panel id="pListaCasosVacia"
+		header="Lista de casos para sorteo de designación"
+		style="margin-bottom:20px"
+		rendered="#{not controladorSorteoView.fechaConsultaValida}">
+		<h:outputText>Sr. Usuario el día de hoy no hay casos programados para sorteo.</h:outputText>
+	</p:panel>
+
+</ui:composition>

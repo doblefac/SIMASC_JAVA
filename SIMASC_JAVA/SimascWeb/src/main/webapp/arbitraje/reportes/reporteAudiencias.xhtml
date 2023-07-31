@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+</h:head>
+<h:body >
+	<f:event listener="#{controladorReporteAudiencias.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<h:form>
+	<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteAudiencias.postConstruct}"/>	
+		<p:panel id="infoCaso" header="Audiencias"
+			style="margin-bottom:20px">
+			<p:panelGrid columns="4" columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"  styleClass="contentGrid"   cellspacing="10"   layout="grid">
+				<p:outputLabel for="codigoCaso" value="Código del caso" />				
+				<p:inputText id="codigoCaso" value="#{controladorReporteAudiencias.codigoCaso}" maxlength="18">
+					<p:ajax event="keyup"
+						listener="#{controladorReporteAudiencias.cambiarCodigoCaso}" process="@form" update="fechaDesde,fechaHasta"/>
+					<p:keyFilter regEx="/[0-9_]/i" />					
+				</p:inputText>
+
+				<p:outputLabel for="fechaDesde" value="Fecha desde*" />				
+				<p:calendar id="fechaDesde" locale="es"
+					value="#{controladorReporteAudiencias.fechaIni}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha desde no es válida" 
+					 />
+
+
+				<p:outputLabel for="nombreCaso" value="Nombre del caso" />
+				<p:inputText value="#{controladorReporteAudiencias.nombreCaso}"
+					id="nombreCaso">
+				</p:inputText>
+
+				<p:outputLabel for="fechaHasta" value="Fecha hasta*" />
+				<p:calendar id="fechaHasta" locale="es"
+					value="#{controladorReporteAudiencias.fechaFin}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha hasta no es válida"
+					 />
+
+				<p:outputLabel for="selectAbogado" value="Abogado" />
+				<p:selectOneMenu
+					value="#{controladorReporteAudiencias.abogadoSeleccionado}"
+					id="selectAbogado" >
+					<f:selectItem itemLabel="Todos" itemValue="0" />
+					<f:selectItems value="#{controladorReporteAudiencias.abogadosDTOs}"
+						var="a" itemLabel="#{a.nombreCompleto}"
+						itemValue="#{a.idPersona}"></f:selectItems>
+				</p:selectOneMenu>
+
+				<p:outputLabel for="selectSecretario" value="Nombre del Secretario" />
+				<p:selectOneMenu
+					value="#{controladorReporteAudiencias.secretarioSeleccionado}"
+					id="selectSecretario" >
+					<f:selectItem itemLabel="Todos" itemValue="0" />
+					<f:selectItems
+						value="#{controladorReporteAudiencias.secretariosDTOs}" var="s"
+						itemLabel="#{s.nombreCompleto}"
+						itemValue="#{s.idPersona}"></f:selectItems>
+				</p:selectOneMenu>
+
+
+				<p:outputLabel for="selectTipoAudiencia" value="Tipo audiencia" />
+				<p:selectOneMenu
+					value="#{controladorReporteAudiencias.tipoAudienciaSeleccionada}"
+					id="selectTipoAudiencia">
+					<f:selectItem itemLabel="Todos" itemValue="0" />
+					<f:selectItems
+						value="#{controladorReporteAudiencias.tipoAudienciasDTOs}"
+						var="ta" itemLabel="#{ta.nombre}" itemValue="#{ta.dominioPK}"></f:selectItems>
+				</p:selectOneMenu>
+
+				<p:outputLabel for="selectArbitro" value="Nombre del Operador" />
+				<p:selectOneMenu autoWidth="false" 	style="min-width: 0px"
+					value="#{controladorReporteAudiencias.arbitroSeleccionado}"
+					id="selectArbitro">
+					<f:selectItem itemLabel="Todos" itemValue="0" />
+					<f:selectItems value="#{controladorReporteAudiencias.arbitrosDTOs}"
+						var="ar" itemLabel="#{ar.nombreCompleto}"
+						itemValue="#{ar.idPersona}"></f:selectItems>
+				</p:selectOneMenu>
+
+
+				<p:outputLabel for="selectEstado" value="Estado de la audiencia" />
+				<p:selectOneMenu
+					value="#{controladorReporteAudiencias.estadoSeccionado}"
+					id="selectEstado" >
+					<f:selectItem itemLabel="Todos" itemValue="0" />
+					<f:selectItems
+						value="#{controladorReporteAudiencias.estadoAudienciaDTOs}"
+						var="ea" itemLabel="#{ea.nombre}" itemValue="#{ea.dominioPK}"></f:selectItems>
+				</p:selectOneMenu>
+			</p:panelGrid>
+			<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>
+					<p:commandButton icon="fa fa-file-excel-o" 
+									actionListener="#{controladorReporteAudiencias.exportarExcel}" 
+									value="Exportar a Excel" 
+									ajax="false" 
+									disabled="#{controladorReporteAudiencias.exportarBloqueado}"
+									immediate="#{!controladorReporteTranscripciones.exportarBloqueado}">
+						<p:dataExporter type="xls" 
+										target="tbl" 
+										fileName="#{controladorReporteAudiencias.nombreReporte}" 
+										postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+					</p:commandButton>
+					<h:commandButton
+						actionListener="#{controladorReporteAudiencias.buscar}"
+						value="Buscar" update="growl" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"/>
+			</p:panelGrid>
+
+			<p:panelGrid columns="1" layout="grid">
+					<p:dataTable id="tbl" var="audiencia"
+					value="#{controladorReporteAudiencias.listaReporte}"
+					emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true"
+					rows="20"
+					style="margin-bottom:20px" scrollable="true" scrollWidth="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}"
+					rowsPerPageTemplate="5,10,20">					
+										
+					<p:column width="72">
+						<f:facet name="header">
+							<h:outputText value="Código del caso" />
+						</f:facet>
+						<h:outputText value="#{audiencia.codigoCaso}" />
+					</p:column>
+
+					<p:column width="170">
+						<f:facet name="header">
+							<h:outputText value="Nombre del caso" />
+						</f:facet>
+						<h:outputText value="#{audiencia.nombreCaso}" />
+					</p:column>
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Fecha de radicación del caso" />
+						</f:facet>
+						<h:outputText value="#{audiencia.fechaRadicacionCaso}">
+							<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+						</h:outputText>
+					</p:column>
+					<p:column width="72">
+						<f:facet name="header">
+							<h:outputText value="Tipo de audiencia" />
+						</f:facet>
+						<h:outputText value="#{audiencia.tipoAudiencia}" />
+					</p:column>
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Fecha de audiencia" />
+						</f:facet>
+						<h:outputText value="#{audiencia.fechaAudiencia}">
+							<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+						</h:outputText>
+					</p:column>
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText value="Nombre del secretario" />
+						</f:facet>
+						<h:outputText value="#{audiencia.nombreSecretario}" />
+					</p:column>
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText value="Nombre del árbitro" />
+						</f:facet>
+						<h:outputText value="#{audiencia.nombreArbitro}" />
+					</p:column>
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText value="Abogado" />
+						</f:facet>
+						<h:outputText value="#{audiencia.abogado}" />
+					</p:column>
+					<p:column width="72">
+						<f:facet name="header">
+							<h:outputText value="Estado" />
+						</f:facet>
+						<h:outputText value="#{audiencia.estado}" />
+					</p:column>
+					<p:column width="72">
+						<f:facet name="header">
+							<h:outputText value="Servicio" />
+						</f:facet>
+						<h:outputText value="#{audiencia.servicio}" />
+					</p:column>
+					<p:column width="72">
+						<f:facet name="header">
+							<h:outputText value="Consumo" />
+						</f:facet>
+						<h:outputText value="#{audiencia.consumo}" />
+					</p:column>
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText value="Observaciones" />
+						</f:facet>
+						<h:outputText value="#{audiencia.observaciones}" />
+					</p:column>
+					
+					<f:facet name="footer">
+						<h:outputText value="Total Audiencias: " style="float:left"/>
+					<h:outputText value="#{controladorReporteAudiencias.total}" style="float:left">
+					</h:outputText>
+    				</f:facet>
+					
+				</p:dataTable>
+			</p:panelGrid>
+		</p:panel>
+	</h:form>
+</h:body>
+</html>

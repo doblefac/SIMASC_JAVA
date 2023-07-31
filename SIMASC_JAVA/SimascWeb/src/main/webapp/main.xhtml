@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Facelet Title</title>
+	<h:outputStylesheet name="css/jsfcrud.css" />
+</h:head>
+<h:body>
+	<h:form>
+        SIMASC Página de Mocks 
+        <br />
+		<!-- <h:link outcome="/funcionarioCcb/List" value="Show All FuncionarioCcb Items"/>
+        <br />
+        <h:link outcome="/persona/List" value="Show All Persona Items"/>
+       -->
+		<h1>Prueba Asignar nombre caso</h1>
+		<!-- <p:commandButton value="Imprimir en consola" id="ajax" actionListener="#{funcionarioCcbController.imprimirConsola()}" styleClass="ui-priority-primary" />
+	   <p:editor id="editor" widgetVar="editorWidget" value="" width="600" />
+        <br /> -->
+		<p:outputLabel>Número caso</p:outputLabel>
+		<p:inputNumber value="#{indexMB.numeroCaso}"> </p:inputNumber>
+		<br />
+		<p:commandButton actionListener="#{indexMB.generarNombreCaso()}"
+			value="Generar nombre del caso"></p:commandButton>
+
+		<br />
+		<br />
+		<br />
+
+		<h1>Prueba Habilitar arbitro</h1>
+		<p:outputLabel>Número caso</p:outputLabel>
+		<p:inputNumber value="#{indexMB.numeroCasoH}" 
+			label="Número caso" />
+		<br />
+
+		<p:outputLabel>Tipo de identificación</p:outputLabel>
+		<p:inputText value="#{indexMB.tipoDocumento}" 
+			label="Tipo de identificación" />
+		<br />
+
+		<p:outputLabel>Número de identificación</p:outputLabel>
+		<p:inputText value="#{indexMB.numeroDocumento}" 
+			label="Número de identificación" />
+		<br />
+
+		<p:outputLabel>Razón</p:outputLabel>
+		<p:inputText value="#{indexMB.razon}" label="Razón" />
+		<br />
+
+		<p:commandButton actionListener="#{indexMB.habilitarArbitro()}"
+			value="Habilitar arbitro"></p:commandButton>
+
+
+			<p:panelMenu style="width:190px">
+				<p:submenu label="Menu">
+					<p:menuitem value="Lista de casos para designación" actionListener="xx"
+						icon="ui-icon-person"
+						url="/sorteo.xhtml" />
+				</p:submenu>
+			</p:panelMenu>
+
+		<h1>Prueba Reparto de funcionarios</h1>
+
+		<p:selectOneListbox value="#{indexMB.casoSelected}" id="listaCasos" >
+			<f:selectItems value="#{indexMB.listaCasos}" var="caso" itemLabel="#{caso.nombre}" itemValue="#{caso.idCaso}" ></f:selectItems>
+		</p:selectOneListbox>
+		<p:selectOneListbox value="#{indexMB.cargo}" id="listaCargos" >
+            <f:selectItem itemLabel="Abogado" itemValue="TFA" />
+            <f:selectItem itemLabel="Auxiliar Administrativo" itemValue="TFX" />
+            <f:selectItem itemLabel="Digitalizador" itemValue="TFA" />
+		</p:selectOneListbox>
+		<p:commandButton value="Reparto" actionListener="#{indexMB.reparto()}" update="nombres"  ></p:commandButton>
+		<p:inputText value="#{indexMB.nombres}" id="nombres" ></p:inputText>
+	</h:form>
+</h:body>
+</html>

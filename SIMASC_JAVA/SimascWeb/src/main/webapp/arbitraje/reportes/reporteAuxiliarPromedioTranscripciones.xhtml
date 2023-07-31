@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+</h:head>
+<h:body >
+	<f:event listener="#{controladorReporteAuxiliarPromedioTranscripcionesView.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<h:form>
+	<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteAuxiliarPromedioTranscripcionesView.postConstruct}"/>
+		<p:panel id="infoCaso" header="Reporte por auxiliar promedio de transcripciones"
+			style="margin-bottom:20px">
+
+			<p:panelGrid columns="4" columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"  styleClass="contentGrid"   cellspacing="10"   layout="grid">
+				<p:outputLabel for="fechaIni" value="Fecha Desde*" />
+				<p:calendar id="fechaIni" locale="es"
+					value="#{controladorReporteAuxiliarPromedioTranscripcionesView.fechaInicialSeleccionada}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha desde no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteAuxiliarPromedioTranscripcionesView.onDateSelect}" />
+				</p:calendar>
+
+				<p:outputLabel for="fechaFin" value="Fecha Hasta*" />
+				<p:calendar id="fechaFin" locale="es"
+					value="#{controladorReporteAuxiliarPromedioTranscripcionesView.fechaFinSeleccionada}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha desde no es válida">
+					<p:ajax event="dateSelect"
+						listener="#{controladorReporteAuxiliarPromedioTranscripcionesView.onDateSelectF}" />
+				</p:calendar>
+				
+				<p:outputLabel for="selectAux" value="Nombre del auxiliar administrativo" />
+				<p:selectOneMenu
+					value="#{controladorReporteAuxiliarPromedioTranscripcionesView.auxiliarSeleccionado}"
+					id="selectAux" >
+					<f:selectItem itemLabel="TODOS" itemValue="TODOS" />
+					<f:selectItems
+						value="#{controladorReporteAuxiliarPromedioTranscripcionesView.funcionarioExternoDTOs}"
+						var="l" itemLabel="#{l.primerNombreORazonSocial} #{l.segundoNombre} #{l.primerApellido} #{l.segundoApellido}"
+						itemValue="#{l.idPersona}"></f:selectItems>
+				</p:selectOneMenu>
+
+			</p:panelGrid>
+
+			<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+				<div></div>
+				<p:commandButton value="Exportar a Excel" icon="fa fa-file-excel-o" disabled="#{controladorReporteAuxiliarPromedioTranscripcionesView.visible}" ajax="false">
+					<p:dataExporter type="xls" target="tbl"
+						fileName="#{controladorReporteAuxiliarPromedioTranscripcionesView.nombreReporte}" 
+						postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+				</p:commandButton>
+				<h:commandButton update="growl"
+					actionListener="#{controladorReporteAuxiliarPromedioTranscripcionesView.buscar}"
+					value="Buscar" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" />
+				
+			</p:panelGrid>
+		</p:panel>
+
+		<p:panel>
+			<p:panelGrid columns="1" layout="grid">
+				<p:dataTable id="tbl" var="reporte" emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorReporteAuxiliarPromedioTranscripcionesView.reporteAuxiliarPromedioTranscripcionesDTOs}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true" style="margin-bottom:20px"
+					scrollable="true" scrollWidth="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}"
+					rows="10" rowsPerPageTemplate="5,10,20">
+
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Nombre del auxiliar administrativo" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombreAuxiliar}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Periodo" />
+						</f:facet>
+						<h:outputText value="#{reporte.periodo}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Número de audiencias atendidas" />
+						</f:facet>
+						<h:outputText value="#{reporte.numeroAudienciasAtendidas}" />
+					</p:column>
+
+					<p:column style="width:100px;">
+						<f:facet name="header">
+							<h:outputText value="Promedio minutos transcritos" />
+						</f:facet>
+						<h:outputText value="#{reporte.promedioDiarioMinutos}" />
+					</p:column>
+
+
+					<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteAuxiliarPromedioTranscripcionesView.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+				</p:dataTable>
+
+			</p:panelGrid>
+
+
+		</p:panel>
+
+
+	</h:form>
+</h:body>
+</html>

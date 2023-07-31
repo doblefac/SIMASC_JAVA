@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Facelet Title</title>
+</h:head>
+<h:body >
+	<f:event listener="#{controladorReporteReportePorAbogado.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<h:form>
+	<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteReportePorAbogado.postConstruct}"/>
+		<p:panel id="infoCaso" header="Reparto por abogado"
+			style="margin-bottom:20px">
+			<p:panelGrid columns="4"
+				columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"
+				layout="grid"  styleClass="contentGrid"   cellspacing="10"  >
+				<p:outputLabel for="fechaDesde" value="Fecha inicial*" />
+				<p:calendar id="fechaDesde" locale="es"
+					value="#{controladorReporteReportePorAbogado.fechaIni}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha inicial no es válida" />
+
+				<p:outputLabel for="fechaHasta" value="Fecha final*" />
+				<p:calendar id="fechaHasta" locale="es"
+					value="#{controladorReporteReportePorAbogado.fechaFin}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha final no es válida"/>
+
+
+				<p:outputLabel for="selectAbogado" value="Abogado" />
+				<p:selectOneMenu
+					value="#{controladorReporteReportePorAbogado.abogadoSeleccionado}"
+					id="selectAbogado">
+					<f:selectItem itemLabel="Todos" itemValue="0" />
+					<f:selectItems
+						value="#{controladorReporteReportePorAbogado.abogadosDTOs}"
+						var="ab"
+						itemLabel="#{ab.primerNombreORazonSocial} #{ab.primerApellido}"
+						itemValue="#{ab.idPersona}"></f:selectItems>
+				</p:selectOneMenu>
+			</p:panelGrid>
+			<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>
+				    <p:commandButton id="btnExportar"
+					actionListener="#{controladorReporteReportePorAbogado.exportarExcel}"
+					icon="fa fa-file-excel-o" value="Exportar a Excel" ajax="false"
+					disabled="#{controladorReporteReportePorAbogado.exportarBloqueado}"
+					immediate="#{!controladorReporteReportePorAbogado.exportarBloqueado}">
+					<p:dataExporter type="xls" target="tbl"
+						fileName="#{controladorReporteReportePorAbogado.nombreReporte}" 
+						postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+				    </p:commandButton>
+				    <p:commandButton
+					actionListener="#{controladorReporteReportePorAbogado.buscar}"
+					value="Buscar" update="growl, pnlResultados, btnExportar,infoCaso" />
+			</p:panelGrid>
+		</p:panel>
+		<p:panel id="pnlResultados">
+			<p:panelGrid columns="1" layout="grid">
+
+				<p:dataTable id="tbl" var="reporte"
+					emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorReporteReportePorAbogado.listaReporte}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true"
+					rows="#{controladorReporteReportePorAbogado.filasPaginador}"
+					style="margin-bottom:20px" scrollable="true" scrollWidth="98%"
+					width="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}"
+					rowsPerPageTemplate="5,10,20">
+
+					<p:column width="170">
+						<f:facet name="header">
+							<h:outputText value="Servicio" />
+						</f:facet>
+						<h:outputText value="#{reporte.tipo}" />
+					</p:column>
+
+					<p:column width="50">
+						<f:facet name="header">
+							<h:outputText value="Código del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.codigoCaso}" />
+					</p:column>
+
+					<p:column width="170">
+						<f:facet name="header">
+							<h:outputText value="Nombre del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombreCaso}" />
+					</p:column>
+
+					<p:column width="85">
+						<f:facet name="header">
+							<h:outputText value="Estado del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.estadoCaso}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Fecha de radicación del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaRadicacionCaso}">
+							<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+						</h:outputText>
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Fecha de audiencia de designación o sorteo" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaAudienciaDesignacion}">
+							<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+						</h:outputText>
+					</p:column>
+
+					<p:column width="90">
+						<f:facet name="header">
+							<h:outputText
+								value="Número de días entre radicación y designación" />
+						</f:facet>
+						<h:outputText value="#{reporte.numeroDiasRadicacionDesignacion}" />
+					</p:column>
+
+					<p:column width="100">
+						<f:facet name="header">
+							<h:outputText value="Indicador de cumplimiento" />
+						</f:facet>
+						<h:outputText value="#{reporte.indicadorCumplimiento}">
+						</h:outputText>
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Fecha de audiencia de instalación" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaAudienciaInstalacion}">
+							<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+						</h:outputText>
+					</p:column>
+
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText value="Nombre abogado" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombreAbogado}" />
+					</p:column>
+					
+					<p:column width="50">
+						<f:facet name="header">
+							<h:outputText value="Consumo" />
+						</f:facet>
+						<h:outputText value="#{reporte.consumo}">
+						</h:outputText>
+					</p:column>
+					
+					<p:column width="70">
+						<f:facet name="header">
+							<h:outputText value="Solicita amparo de pobreza" />
+						</f:facet>
+						<h:outputText value="#{reporte.solicitaAmparo}">
+						</h:outputText>
+					</p:column>
+					
+					<p:column width="70">
+						<f:facet name="header">
+							<h:outputText value="Medidas cautelares" />
+						</f:facet>
+						<h:outputText value="#{reporte.medidasCautelares}">
+						</h:outputText>
+					</p:column>
+					
+					<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteReportePorAbogado.totalArbitros}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+
+				</p:dataTable>
+			</p:panelGrid>
+		</p:panel>
+	</h:form>
+</h:body>
+</html>

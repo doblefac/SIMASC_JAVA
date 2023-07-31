@@ -1,0 +1,494 @@
+package com.ccb.simasc.web.controladores.reportes;
+
+import static com.ccb.simasc.transversal.utilidades.UtilReflection.obtenerValorLlaves;
+
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.ejb.EJB;
+import javax.faces.application.FacesMessage;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ViewScoped;
+import javax.faces.context.FacesContext;
+import javax.faces.event.ValueChangeEvent;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.ccb.simasc.negocio.arbitraje.FuncionarioExternoFacade;
+import com.ccb.simasc.negocio.arbitraje.GeneradorListasDeValores;
+import com.ccb.simasc.negocio.arbitraje.ListaFacade;
+//import com.ccb.simasc.negocio.arbitraje.ListaFacade;
+import com.ccb.simasc.negocio.arbitraje.MateriaFacade;
+import com.ccb.simasc.negocio.arbitraje.ReporteFacade;
+import com.ccb.simasc.negocio.arbitraje.ServicioFacade;
+import com.ccb.simasc.negocio.transversal.FachadaDominios;
+import com.ccb.simasc.transversal.dto.ArbitroDTO;
+import com.ccb.simasc.transversal.dto.DominioDTO;
+import com.ccb.simasc.transversal.dto.ListaDTO;
+import com.ccb.simasc.transversal.dto.MateriaDTO;
+import com.ccb.simasc.transversal.dto.ServicioDTO;
+import com.ccb.simasc.transversal.dto.reportes.ReporteDeArbitroDTO;
+import com.ccb.simasc.transversal.entidades.DominioPK;
+import com.ccb.simasc.transversal.entidades.ServicioMateria;
+import com.ccb.simasc.transversal.utilidades.MensajesEnum;
+import com.ccb.simasc.transversal.utilidades.MensajesSimasc;
+import com.ccb.simasc.transversal.utilidades.UtilConstantes;
+import com.ccb.simasc.transversal.utilidades.UtilDominios;
+
+@ManagedBean(name = "controladorReporteDeArbitro")
+@ViewScoped
+public class ControladorReporteDeArbitro implements Serializable {
+
+	@EJB
+	FuncionarioExternoFacade funcionarioExternofacade;
+
+	@EJB
+	ReporteFacade reporteFacade;
+
+	@EJB
+	FachadaDominios dominioFacade;
+
+	@EJB
+	MateriaFacade materiaFacade;
+	
+	@EJB
+	ServicioFacade servicioFacade;
+	
+	@EJB
+	ListaFacade listaFacade;
+	
+	@EJB
+	private GeneradorListasDeValores generadorListas;
+	
+
+	private static final long serialVersionUID = 1L;	
+	private static final Logger logger = LogManager.getLogger(ControladorReporteDeArbitro.class.getName());
+
+	private List<ArbitroDTO> arbitrosDTOs;
+	private List<ServicioDTO> tipoCasoDTOs;
+	private List<DominioDTO> estadoDTOs;
+	private List<DominioDTO> motivoDTOs;
+	private List<MateriaDTO> materiaDTOs;	
+	private List<ListaDTO> tipoListaDTOs;
+	private List<DominioDTO> disponibilidadDTOs;
+
+	private String arbitroSeleccionado;
+	private String tipoCasoSeleccionado;
+	private String estadoSeleccionado;
+	private String motivoSeleccionado;
+	private String materiaSeleccionada;
+	private String tipoListaSeccionado;
+	private String disponibilidadSeleccionada;
+
+
+	private List<ReporteDeArbitroDTO> listaReporte;
+
+	private boolean exportarBloqueado;
+	private String nombreReporte;
+	private String filasPaginador;
+	private boolean limpiar = true;
+	private int total;
+	
+	
+	/**
+	 * Valida si entra al reporte para limpiar la pantalla
+	 */
+	public void preRenderComp() {
+		if (FacesContext.getCurrentInstance().getRenderResponse() && this.limpiar) {
+			listaReporte = new ArrayList<ReporteDeArbitroDTO>();
+			total = 0;
+			limpiarFiltros();
+			exportarBloqueado = true;
+		}
+		limpiar = true;
+	}
+	
+
+	@PostConstruct
+	public void postConstruct(){
+
+		arbitrosDTOs = new ArrayList<ArbitroDTO>();
+		tipoCasoDTOs = new ArrayList<ServicioDTO>();
+		estadoDTOs = new ArrayList<DominioDTO>();
+		motivoDTOs = new ArrayList<DominioDTO>();
+		materiaDTOs = new ArrayList<MateriaDTO>();
+		tipoListaDTOs = new ArrayList<ListaDTO>();	
+		disponibilidadDTOs = new ArrayList<DominioDTO>();
+
+		listaReporte = new ArrayList<ReporteDeArbitroDTO>();
+		exportarBloqueado = true;
+
+		// ***************************************************************************************************
+		// ***************** El siguiente dato debe ser un parametro *****************************************
+		// ***************************************************************************************************
+		filasPaginador = "20";
+		limpiarFiltros();
+		cargarListas();
+
+	}
+
+	@PreDestroy
+	public void preDestroy(){
+
+		arbitrosDTOs = new ArrayList<ArbitroDTO>();
+		tipoCasoDTOs = new ArrayList<ServicioDTO>();
+		estadoDTOs = new ArrayList<DominioDTO>();
+		motivoDTOs = new ArrayList<DominioDTO>();
+		materiaDTOs = new ArrayList<MateriaDTO>();
+		tipoListaDTOs = new ArrayList<ListaDTO>();	
+		disponibilidadDTOs = new ArrayList<DominioDTO>();
+		listaReporte = new ArrayList<ReporteDeArbitroDTO>();
+		exportarBloqueado = true;
+
+	}
+
+	public void cargarMotivoArbitroDesignado(String nombre, String descripcion, String codDomPadre, String domPadre) {
+		
+		DominioDTO arbitroDesignado = new DominioDTO();
+		DominioPK dominioDesignadoPK = new DominioPK("DEC",UtilConstantes.CADENA_VACIA);
+		arbitroDesignado.setDominioPK(dominioDesignadoPK);
+		if(codDomPadre == null){
+			arbitroDesignado.setCodigoDomPadre(UtilConstantes.CADENA_VACIA);
+		}else{
+			arbitroDesignado.setCodigoDomPadre(codDomPadre);
+		}
+		if(codDomPadre == null){
+			arbitroDesignado.setCodigoDomPadre(UtilConstantes.CADENA_VACIA);
+		}else{
+			arbitroDesignado.setCodigoDomPadre(domPadre);
+		}	
+		arbitroDesignado.setDominioPadre(UtilConstantes.CADENA_VACIA);
+		arbitroDesignado.setNombre(nombre);
+		arbitroDesignado.setDescripcion(descripcion);
+		motivoDTOs.add(arbitroDesignado);
+	}
+	
+	public void cargarListas(){
+		arbitrosDTOs = generadorListas.consultarOperadoresDTO(); 
+//		arbitrosDTOs = funcionarioExternofacade.getBusquedaFuncionarios(UtilDominios.ROL_PERSONA_ARBITRO);		
+		tipoCasoDTOs = servicioFacade.getBusquedaServicios();
+		this.ordenarServicios();
+		estadoDTOs =dominioFacade.getDominiosDTO(UtilDominios.DOMINIO_ESTADO_ARBITROS);
+		motivoDTOs =dominioFacade.getDominiosDTO(UtilDominios.DOMINIO_MOTIVO_ESTADO);
+		this.cargarMotivoArbitroDesignado(UtilDominios.DOMINIO_ESTADO_HABILITADO_NO_DISPO_PARA_SORTEO,UtilDominios.DOMINIO_ESTADO_HABILITADO_NO_DISPO_PARA_SORTEO, null, null );
+		materiaDTOs = materiaFacade.getBusquedaMaterias();
+		this.ordenarMaterias();
+		tipoListaDTOs = listaFacade.getListasDTO();
+		disponibilidadDTOs = dominioFacade.getDominiosDTO(UtilDominios.DOMINIO_DISPONIBILIDAD);
+	}
+	
+	/**
+	 * Metodo encargado de cargar la lista de materias de acuerdo
+	 * al tipo de servicio seleccionado
+	 */
+	public void cargarMaterias(ValueChangeEvent ev) {
+		materiaDTOs = new ArrayList<MateriaDTO>();
+		try {
+			if (ev.getNewValue() != null) {
+				String tipoCasoSeleccionado = (String) ev.getNewValue();
+				if (tipoCasoSeleccionado != null) {
+					materiaDTOs = materiaFacade.getBusquedaMateriasXServicio(
+							ServicioMateria.ENTIDAD_SERVICIO_MATERIA_PK_ID_SERVICIO, tipoCasoSeleccionado);
+					this.ordenarMaterias();
+				}
+			}
+		} catch (Exception e) {
+			logger.error("Funcion cargarMaterias ----> ", e.getMessage());
+		}
+	}
+	
+	/**
+	 * Realiza el ordenamiento de la lista de materias
+	 */
+	private void ordenarServicios() {
+		if (tipoCasoDTOs != null && tipoCasoDTOs.size() > 0) {
+			Collections.sort(tipoCasoDTOs, new Comparator<ServicioDTO>() {
+		        @Override
+		        public int compare(ServicioDTO m1, ServicioDTO m2) {
+		            return  m1.getNombre().compareTo(m2.getNombre());
+		        }
+		    });				
+		}			
+	}
+	
+	/**
+	 * Realiza el ordenamiento de la lista de materias
+	 */
+	private void ordenarMaterias() {
+		if (materiaDTOs != null && materiaDTOs.size() > 0) {
+			Collections.sort(materiaDTOs, new Comparator<MateriaDTO>() {
+		        @Override
+		        public int compare(MateriaDTO m1, MateriaDTO m2) {
+		            return  m1.getNombre().compareTo(m2.getNombre());
+		        }
+		    });				
+		}			
+	}
+
+
+	public void buscar(){		
+		FacesContext facesContext = FacesContext.getCurrentInstance();
+		this.limpiar = false;
+		Map<String,Object> filtros= new HashMap<>();
+		try {
+			if (!arbitroSeleccionado.equals("0")){
+				filtros.put("arbitro", arbitroSeleccionado);
+			}
+			if(!tipoCasoSeleccionado.equals("0")){
+				
+				filtros.put("tipoCasoCodigo", tipoCasoSeleccionado);
+			}
+			if(!estadoSeleccionado.equals("0")){
+				Map<String,String> llavesEstado = obtenerValorLlaves(DominioPK.class, estadoSeleccionado);
+				filtros.put("estadoCodigo", llavesEstado.get("codigo"));
+			}
+			if(!motivoSeleccionado.equals("0")){
+				Map<String,String> llavesMotivo = obtenerValorLlaves(DominioPK.class, motivoSeleccionado);
+				filtros.put("motivoCodigo", llavesMotivo.get("codigo"));
+			}
+			if(!tipoListaSeccionado.equals("0")){
+				filtros.put("tipoListaCodigo", tipoListaSeccionado);
+			}
+			
+			filtros.put("materiaSeleccionada", materiaSeleccionada);
+			
+			listaReporte = reporteFacade.getDatosReporteArbitros(filtros);
+			setTotal(listaReporte.size());
+			exportarBloqueado = listaReporte.isEmpty();
+			if(listaReporte.isEmpty()){
+				facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, UtilConstantes.ENCABEZADO_MENSAJE_INFORMATIVO, MensajesSimasc.getInstancia().getMensajePorKey(
+						MensajesEnum.INFO031.toString())));
+			}
+
+
+
+//			limpiarFiltros();
+
+		} catch (ClassNotFoundException e) {
+			logger.error("Funcion buscar ----> ", e.getMessage());
+		}
+	}
+
+	public void exportarExcel(){
+		SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyyHHmmss");
+		String date = sdf.format(new Date());
+		nombreReporte = "Reporte_arbitros" + date;
+	}
+
+	public void limpiarFiltros(){
+		arbitroSeleccionado=null;
+		tipoCasoSeleccionado=estadoSeleccionado= motivoSeleccionado= materiaSeleccionada= tipoListaSeccionado =disponibilidadSeleccionada=null;
+	}
+
+	/*
+	public List<FuncionarioExternoDTO> getArbitrosDTOs() {
+		return arbitrosDTOs;
+	}
+
+
+	public void setArbitrosDTOs(List<FuncionarioExternoDTO> arbitrosDTOs) {
+		this.arbitrosDTOs = arbitrosDTOs;
+	}
+	 */
+
+	public List<ServicioDTO> getTipoCasoDTOs() {
+		return tipoCasoDTOs;
+	}
+
+
+	public void setTipoCasoDTOs(List<ServicioDTO> tipoCasoDTOs) {
+		this.tipoCasoDTOs = tipoCasoDTOs;
+	}
+
+
+	public List<DominioDTO> getEstadoDTOs() {
+		return estadoDTOs;
+	}
+
+
+	public void setEstadoDTOs(List<DominioDTO> estadoDTOs) {
+		this.estadoDTOs = estadoDTOs;
+	}
+
+
+	public List<DominioDTO> getMotivoDTOs() {
+		return motivoDTOs;
+	}
+
+
+	public void setMotivoDTOs(List<DominioDTO> motivoDTOs) {
+		this.motivoDTOs = motivoDTOs;
+	}
+	
+
+	public List<MateriaDTO> getMateriaDTOs() {
+		return materiaDTOs;
+	}
+
+
+	public void setMateriaDTOs(List<MateriaDTO> materiaDTOs) {
+		this.materiaDTOs = materiaDTOs;
+	}
+
+
+	public List<ListaDTO> getTipoListaDTOs() {
+		return tipoListaDTOs;
+	}
+
+
+	public void setTipoListaDTOs(List<ListaDTO> tipoListaDTOs) {
+		this.tipoListaDTOs = tipoListaDTOs;
+	}
+
+
+	public List<DominioDTO> getDisponibilidadDTOs() {
+		return disponibilidadDTOs;
+	}
+
+
+	public void setDisponibilidadDTOs(List<DominioDTO> disponibilidadDTOs) {
+		this.disponibilidadDTOs = disponibilidadDTOs;
+	}
+
+
+
+
+
+	public String getArbitroSeleccionado() {
+		return arbitroSeleccionado;
+	}
+
+
+	public void setArbitroSeleccionado(String arbitroSeleccionado) {
+		this.arbitroSeleccionado = arbitroSeleccionado;
+	}
+
+
+	public String getTipoCasoSeleccionado() {
+		return tipoCasoSeleccionado;
+	}
+
+
+	public void setTipoCasoSeleccionado(String tipoCasoSeleccionado) {
+		this.tipoCasoSeleccionado = tipoCasoSeleccionado;
+	}
+
+
+	public String getEstadoSeleccionado() {
+		return estadoSeleccionado;
+	}
+
+
+	public void setEstadoSeleccionado(String estadoSeleccionado) {
+		this.estadoSeleccionado = estadoSeleccionado;
+	}
+
+	public String getMotivoSeleccionado() {
+		return motivoSeleccionado;
+	}
+
+
+	public void setMotivoSeleccionado(String motivoSeleccionado) {
+		this.motivoSeleccionado = motivoSeleccionado;
+	}
+
+	
+	public String getMateriaSeleccionada() {
+		return materiaSeleccionada;
+	}
+
+
+	public void setMateriaSeleccionada(String materiaSeleccionada) {
+		this.materiaSeleccionada = materiaSeleccionada;
+	}
+
+
+	public String getTipoListaSeccionado() {
+		return tipoListaSeccionado;
+	}
+
+
+	public void setTipoListaSeccionado(String tipoListaSeccionado) {
+		this.tipoListaSeccionado = tipoListaSeccionado;
+	}
+
+
+	public List<ReporteDeArbitroDTO> getListaReporte() {
+		return listaReporte;
+	}
+
+
+	public void setListaReporte(List<ReporteDeArbitroDTO> listaReporte) {
+		this.listaReporte = listaReporte;
+	}
+
+
+	public boolean isExportarBloqueado() {
+		return exportarBloqueado;
+	}
+
+
+	public void setExportarBloqueado(boolean exportarBloqueado) {
+		this.exportarBloqueado = exportarBloqueado;
+	}
+
+
+	public String getNombreReporte() {
+		return nombreReporte;
+	}
+
+
+	public void setNombreReporte(String nombreReporte) {
+		this.nombreReporte = nombreReporte;
+	}
+
+
+	public String getFilasPaginador() {
+		return filasPaginador;
+	}
+
+
+	public void setFilasPaginador(String filasPaginador) {
+		this.filasPaginador = filasPaginador;
+	}
+
+
+	public List<ArbitroDTO> getArbitrosDTOs() {
+		return arbitrosDTOs;
+	}
+
+
+	public void setArbitrosDTOs(List<ArbitroDTO> arbitrosDTOs) {
+		this.arbitrosDTOs = arbitrosDTOs;
+	}
+
+
+	public String getDisponibilidadSeleccionada() {
+		return disponibilidadSeleccionada;
+	}
+
+
+	public void setDisponibilidadSeleccionada(String disponibilidadSeleccionada) {
+		this.disponibilidadSeleccionada = disponibilidadSeleccionada;
+	}
+
+
+	public int getTotal() {
+		return total;
+	}
+
+
+	public void setTotal(int total) {
+		this.total = total;
+	}
+}

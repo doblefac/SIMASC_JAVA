@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Class-Path: APP-INF/lib/eclipselink-2.5.0.jar
+

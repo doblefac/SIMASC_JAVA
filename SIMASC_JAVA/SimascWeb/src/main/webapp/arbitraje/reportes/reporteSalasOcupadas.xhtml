@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+	<h:head>
+	</h:head>
+	<h:body >
+		<f:event listener="#{controladorReporteSalasOcupadas.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+		<h:form>
+		<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteSalasOcupadas.postConstruct}"/>
+			<p:panel id="infoCaso" header="Reporte salas ocupadas"
+				style="margin-bottom:20px">
+				<p:panelGrid columns="4"
+					columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"
+					layout="grid" styleClass="contentGrid"   cellspacing="10"  >
+					
+					<p:outputLabel for="fechaDesde" value="Fecha de búsqueda *" />
+					<p:calendar id="fechaDesde" locale="es"
+						value="#{controladorReporteSalasOcupadas.fechaIni}"
+						pattern="yyyy/MM/dd" mask="true" style="border: none;" converterMessage="La Fecha de búsqueda no es válida"/>
+						
+					<p:outputLabel for="nombreCaso" value="Nombre del caso" />
+					<p:inputText value="#{controladorReporteSalasOcupadas.nombreCaso}"
+						id="nombreCaso" maxlength="150">
+					</p:inputText>
+					
+					<p:outputLabel for="codigoCaso" value="Código del caso" />
+					<p:inputText id="codigoCaso"
+						value="#{controladorReporteSalasOcupadas.codigoCaso}" maxlength="18">
+						<p:ajax event="keyup"
+							listener="#{controladorReporteSalasOcupadas.cambiarCodigoCaso}" />
+						<p:keyFilter regEx="/[0-9_]/i" />
+					</p:inputText>
+					<p:outputLabel for="selectSede" value="Sede" />
+					<p:selectOneMenu
+						value="#{controladorReporteSalasOcupadas.sedeSeleccionada}"
+						id="selectSede">
+						<f:selectItem itemLabel="TODAS" itemValue="0" />
+						<f:selectItems
+							value="#{controladorReporteSalasOcupadas.listaSedes}" var="ta"
+							itemLabel="#{ta.nombre}" itemValue="#{ta.idSede}"></f:selectItems>
+					</p:selectOneMenu>
+					
+				</p:panelGrid>
+				<p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>
+					<p:commandButton id="btnExportar"
+						actionListener="#{controladorReporteSalasOcupadas.exportarExcel}"
+						icon="fa fa-file-excel-o" value="Exportar a Excel" ajax="false"
+						disabled="#{controladorReporteSalasOcupadas.exportarBloqueado}"
+						immediate="#{!controladorReporteSalasOcupadas.exportarBloqueado}">
+						<p:dataExporter type="xls" target="tbl"
+							fileName="#{controladorReporteSalasOcupadas.nombreReporte}" 
+							postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+					</p:commandButton>
+					<h:commandButton
+						actionListener="#{controladorReporteSalasOcupadas.buscar}"
+						value="Buscar" update="growl, pnlResultados, btnExportar" styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"  />
+				</p:panelGrid>
+			</p:panel>
+			<p:panel id="pnlResultados">
+				<p:panelGrid columns="1" layout="grid" style="width:100%">
+
+					<p:dataTable id="tbl" var="reporte"
+						emptyMessage="#{bundle.MensajeReporteSinResultado}"
+						value="#{controladorReporteSalasOcupadas.listaReporte}"
+						paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+						paginator="true"
+						rows="#{controladorReporteSalasOcupadas.filasPaginador}"
+						style="margin-bottom:20px" scrollable="true" scrollWidth="98%"
+						width="98%"
+						currentPageReportTemplate="{currentPage} de {totalPages}"
+						rowsPerPageTemplate="5,10,20">
+
+						<p:column width="90">
+							<f:facet name="header">
+								<h:outputText value="Sede" />
+							</f:facet>
+							<h:outputText value="#{reporte.sede}" />
+						</p:column>
+
+						<p:column width="90">
+							<f:facet name="header">
+								<h:outputText value="Número de la sala" />
+							</f:facet>
+							<h:outputText value="#{reporte.numeroSala}" />
+						</p:column>
+
+						<p:column width="150">
+							<f:facet name="header">
+								<h:outputText value="Nombre caso" />
+							</f:facet>
+							<h:outputText value="#{reporte.nombreCaso}" />
+						</p:column>
+						<p:column width="72">
+							<f:facet name="header">
+								<h:outputText value="Código caso" />
+							</f:facet>
+							<h:outputText value="#{reporte.codigoCaso}" />
+						</p:column>
+						<p:column width="90">
+							<f:facet name="header">
+								<h:outputText value="Fecha de la audiencia" />
+							</f:facet>
+							<h:outputText value="#{reporte.fechaAudiencia}" />
+						</p:column>
+						<p:column width="90">
+							<f:facet name="header">
+								<h:outputText value="Hora inicial" />
+							</f:facet>
+							<h:outputText value="#{reporte.horaInicial}" />
+						</p:column>
+						<p:column width="90">
+							<f:facet name="header">
+								<h:outputText value="Hora final" />
+							</f:facet>
+							<h:outputText value="#{reporte.horaFinal}" />
+						</p:column>
+						<p:column width="150">
+							<f:facet name="header">
+								<h:outputText value="Árbitros" />
+							</f:facet>
+							<h:outputText value="#{reporte.arbitros}" />
+						</p:column>
+						<p:column width="150">
+							<f:facet name="header">
+								<h:outputText value="Secretario" />
+							</f:facet>
+							<h:outputText value="#{reporte.secretario}" />
+						</p:column>
+						
+						<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteSalasOcupadas.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+						
+					</p:dataTable>
+				</p:panelGrid>
+			</p:panel>
+		</h:form>
+	</h:body>
+</ui:composition>

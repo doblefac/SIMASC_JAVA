@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+		
+		<h:form>
+			<f:event listener="#{controladorReporteArbitrosDisponiblesSorteo.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+			<p:remoteCommand id="reset" name="reset"
+				action="#{controladorReporteArbitrosDisponiblesSorteo.postConstruct}" />
+			<p:panel id="infoCaso"
+				header="Reporte de operadores disponibles para sorteo"
+				style="margin-bottom:20px">
+
+				<p:panelGrid columns="4"
+					columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"
+					styleClass="contentGrid" cellspacing="10" layout="grid">
+					<p:outputLabel for="selectTipoCaso" value="Servicio*" />
+					<p:selectOneMenu
+						value="#{controladorReporteArbitrosDisponiblesSorteo.tipoCasoSeleccionado}"
+						id="selectTipoCaso"
+						valueChangeListener="#{controladorReporteArbitrosDisponiblesSorteo.changeServicio}">
+						<f:selectItem itemLabel="Seleccione" itemValue="" />
+						<f:selectItems
+							value="#{controladorReporteArbitrosDisponiblesSorteo.tipoCasoDTOs}"
+							var="lS" itemLabel="#{lS.nombre}" itemValue="#{lS.idServicio}"></f:selectItems>
+						<p:ajax event="valueChange" immediate="true" process="@this"
+							update="selectMateria" />
+						<p:ajax event="valueChange" immediate="true" process="@this"
+							update="selectTipoSorteo" />
+					</p:selectOneMenu>
+					
+					<p:outputLabel for="selectTipoSorteo" value="Tipo Sorteo*" />
+					<p:selectOneMenu
+						value="#{controladorReporteArbitrosDisponiblesSorteo.tipoSorteoSeleccionado}"
+						id="selectTipoSorteo">
+						<f:selectItem itemLabel="Seleccione" itemValue="" />
+						<f:selectItems
+							value="#{controladorReporteArbitrosDisponiblesSorteo.tipoSorteoDTOs}"
+							var="sorteo" itemLabel="#{sorteo.nombre}" itemValue="#{sorteo.dominioPK}"></f:selectItems>						
+					</p:selectOneMenu>
+
+					<p:outputLabel for="selectMateria" value="Materia" />
+					<p:selectOneMenu
+						value="#{controladorReporteArbitrosDisponiblesSorteo.materiaSeleccionada}"
+						id="selectMateria">
+						<f:selectItem itemLabel="Seleccione" itemValue="" />
+						<f:selectItems
+							value="#{controladorReporteArbitrosDisponiblesSorteo.materiaDTOs}"
+							var="lm" itemLabel="#{lm.nombre}" itemValue="#{lm.idMateria}"></f:selectItems>
+					</p:selectOneMenu>
+
+					<p:outputLabel for="selectTipoCuantia" value="Cuantía" />
+					<p:selectOneMenu
+						value="#{controladorReporteArbitrosDisponiblesSorteo.cuantiaSeleccionada}"
+						id="selectTipoCuantia">
+						<f:selectItem itemLabel="Seleccione" itemValue="" />
+						<f:selectItems
+							value="#{controladorReporteArbitrosDisponiblesSorteo.tipoCuantiaDTOs}"
+							var="lS" itemLabel="#{lS.nombre}" itemValue="#{lS.dominioPK}"></f:selectItems>
+					</p:selectOneMenu>
+					
+					<p:outputLabel for="codigoCaso" value="Código del Caso" />
+					<p:inputText
+						value="#{controladorReporteArbitrosDisponiblesSorteo.codigoCaso}"
+						id="codigoCaso" />
+					
+				</p:panelGrid>
+
+				<p:panelGrid columns="3"
+					columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2"
+					styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>
+					<p:commandButton value="Exportar a Excel" icon="fa fa-file-excel-o"
+						ajax="false" update=""
+						disabled="#{controladorReporteArbitrosDisponiblesSorteo.visible}">
+						<p:dataExporter type="xls" target="tbl"
+							fileName="#{controladorReporteArbitrosDisponiblesSorteo.nombreReporte}"
+							postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+					</p:commandButton>
+					<h:commandButton
+						actionListener="#{controladorReporteArbitrosDisponiblesSorteo.buscar}"
+						value="Buscar" update="growl"
+						styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" />
+				</p:panelGrid>
+			</p:panel>
+		</h:form>
+
+		<p:panel>
+			<p:panelGrid columns="1" layout="grid">
+				<p:dataTable id="tbl" var="reporte" rowsPerPageTemplate="5,10,20"
+					stickyHeader="true"
+					emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorReporteArbitrosDisponiblesSorteo.reporteArbitrosDisponiblesSorteoDTOs}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true"
+					rows="20"
+					style="margin-bottom:20px" scrollable="true" scrollWidth="100%"
+					width="100%"
+					currentPageReportTemplate="{currentPage} de {totalPages}">
+					<p:column style="width:150;">
+						<f:facet name="header">
+							<h:outputText value="Consecutivo" />
+						</f:facet>
+						<h:outputText value="#{reporte.consecutivo}" />
+					</p:column>
+					<p:column style="width:150;">
+						<f:facet name="header">
+							<h:outputText value="Nombre del operador" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombreArbitro}" />
+					</p:column>
+
+					<p:column style="width:100;">
+						<f:facet name="header">
+							<h:outputText value="Materia" />
+						</f:facet>
+						<h:outputText value="#{reporte.materia}" />
+					</p:column>
+
+					<p:column style="width:100;">
+						<f:facet name="header">
+							<h:outputText value="Lista" />
+						</f:facet>
+						<h:outputText value="#{reporte.lista}" />
+					</p:column>
+					<p:column style="width:150;" rendered="#{controladorReporteArbitrosDisponiblesSorteo.codigoVisible}">
+						<f:facet name="header">
+							<h:outputText value="Designado Previamente" />
+						</f:facet>
+						<h:outputText value="#{reporte.designadoPreviamente}" />
+					</p:column>
+					<p:column style="width:150;" rendered="#{controladorReporteArbitrosDisponiblesSorteo.codigoVisible}">
+						<f:facet name="header">
+							<h:outputText value="Preselección" />
+						</f:facet>
+						<h:outputText value="#{reporte.preseleccion}" />
+					</p:column>
+					<p:column style="width:150;" rendered="#{controladorReporteArbitrosDisponiblesSorteo.codigoVisible}">
+						<f:facet name="header">
+							<h:outputText value="Tipo de Preselección" />
+						</f:facet>
+						<h:outputText value="#{reporte.tipoPreseleccion}" />
+					</p:column>
+					<f:facet name="footer">
+						<h:outputText value="Total de operadores: " style="float:left"/>
+					<h:outputText value="#{controladorReporteArbitrosDisponiblesSorteo.totalArbitros}" style="float:left">
+					</h:outputText>
+    				</f:facet>
+				</p:dataTable>
+			</p:panelGrid>
+		</p:panel>
+</ui:composition>

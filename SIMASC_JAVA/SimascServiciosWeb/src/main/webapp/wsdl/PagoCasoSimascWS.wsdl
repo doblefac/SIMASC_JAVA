@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<definitions
+	targetNamespace="http://services.simasc"
+	name="PagoCasoSimascWS"
+	xmlns="http://schemas.xmlsoap.org/wsdl/" 
+	xmlns:tns="http://services.simasc"	 
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"	 	
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+	<types>
+		<xsd:schema>
+			<xsd:import namespace="http://services.simasc" schemaLocation="PagoCasoSimascSchema.xsd"/>
+		</xsd:schema>        
+    </types>
+
+	<message name="crearPagoCasoRequest">
+		<part name="CrearPagoCasoRequest" element="tns:CrearPagoCasoRequest">
+			<documentation>Request que crea el pago caso con sus respectivos atributo</documentation>
+		</part>
+	</message>
+	<message name="crearPagoCasoResponse">
+		<part name="CrearPagoCasoResponse" element="tns:CrearPagoCasoResponse"></part>
+	</message>
+	<message name="crearPagoCasoFault">
+		<part name="CrearPagoCasoFault"
+			element="tns:CrearPagoCasoFault">
+		</part>
+	</message>
+	
+	<portType name="PagoCasoSimascWS">
+		<operation name="crearPagoCaso">
+			<input message="tns:crearPagoCasoRequest"></input>
+			<output message="tns:crearPagoCasoResponse"></output>
+            <fault name="fault" message="tns:crearPagoCasoFault"></fault>
+        </operation>
+	</portType>
+
+
+	<binding name="PagoCasoSimascWSBinding" type="tns:PagoCasoSimascWS">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+		<operation name="crearPagoCaso">
+			<soap:operation
+				soapAction="" />
+			<input>
+				<soap:body use="literal" />
+			</input>
+			<output>
+				<soap:body use="literal" />
+			</output>
+			<fault name="fault">
+        		<soap:fault use="literal" name="fault"/>
+      		</fault>      
+		</operation>
+	</binding>
+
+
+	<service name="PagoCasoSimascWS">
+		<documentation>Permite realizar la creacion de una solicitud de servicio de conciliacion en el sistema SIMASC con los datos basicos de la solicitud, entregando como resultado un mensaje, junto con el id del servicio creado en el sistema SIMASC.</documentation>
+		<port name="PagoCasoSimascWSPort" binding="tns:PagoCasoSimascWSBinding">
+			<soap:address location="http://localhost:9080/PagoCasoSimascWSPort/PagoCasoSimascWS" />
+		</port>
+	</service>
+</definitions>

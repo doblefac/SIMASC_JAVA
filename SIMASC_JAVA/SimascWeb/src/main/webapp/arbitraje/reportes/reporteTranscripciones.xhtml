@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Facelet Title</title>
+</h:head>
+<h:body >
+	<f:event listener="#{controladorReporteTranscripciones.preRenderComp()}" type="javax.faces.event.PreRenderComponentEvent"/>
+	<h:form>
+	<p:remoteCommand  id="reset" name="reset" action="#{controladorReporteTranscripciones.postConstruct}"/>
+		<p:panel id="infoCaso" header="Reporte transcripciones"
+			style="margin-bottom:20px">
+			<p:panelGrid columns="4"
+				columnClasses="ui-grid-col-2,ui-grid-col-4,ui-grid-col-2,ui-grid-col-4"
+				layout="grid" styleClass="contentGrid"   cellspacing="10" >
+
+				<p:outputLabel for="fechaDesde" value="Fecha inicial*" />
+				<p:calendar id="fechaDesde" locale="es"
+					value="#{controladorReporteTranscripciones.fechaIni}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha inicial no es válida"
+					/>
+
+				<p:outputLabel for="fechaHasta" value="Fecha final*" />
+				<p:calendar id="fechaHasta" locale="es"
+					value="#{controladorReporteTranscripciones.fechaFin}"
+					pattern="yyyy/MM/dd" mask="true" converterMessage="La Fecha final no es válida"
+					 />
+
+
+				<p:outputLabel for="selectAuxiliar"
+					value="Nombre del auxiliar administrativo" />
+				<p:selectOneMenu
+					value="#{controladorReporteTranscripciones.auxiliarSeleccionado}"
+					id="selectAuxiliar">
+					<f:selectItem itemLabel="Todos" itemValue="0" />
+					<f:selectItems
+						value="#{controladorReporteTranscripciones.auxiliaresDTOs}"
+						var="a"
+						itemLabel="#{a.primerNombreORazonSocial} #{a.primerApellido}"
+						itemValue="#{a.idPersona}"></f:selectItems>
+				</p:selectOneMenu>
+
+				<p:outputLabel for="codigoCaso" value="Código del caso" />
+				<p:inputText id="codigoCaso"
+					value="#{controladorReporteTranscripciones.codigoCaso}" maxlength="18">
+					<p:ajax event="keyup"
+						listener="#{controladorReporteTranscripciones.cambiarCodigoCaso}"
+						 />
+					<p:keyFilter regEx="/[0-9_]/i" />
+				</p:inputText>
+
+				<p:outputLabel for="nombreCaso" value="Nombre del caso" />
+				
+				<p:inputText value="#{controladorReporteTranscripciones.nombreCaso}"
+					id="nombreCaso" maxlength="150">
+				</p:inputText>
+
+				
+			</p:panelGrid>
+            <p:panelGrid columns="3" columnClasses="ui-grid-col-8,ui-grid-col-2,ui-grid-col-2" styleClass="centerChilds contentGrid" layout="grid">
+					<div></div>
+					<p:commandButton
+						actionListener="#{controladorReporteTranscripciones.exportarExcel}"
+						icon="fa fa-file-excel-o"  value="Exportar a Excel" ajax="false"
+						disabled="#{controladorReporteTranscripciones.exportarBloqueado}"
+						immediate="#{!controladorReporteTranscripciones.exportarBloqueado}">
+						<p:dataExporter type="xls" target="tbl"
+							fileName="#{controladorReporteTranscripciones.nombreReporte}" 
+							postProcessor="#{controladorReporteCasoSecretarioView.postProcessXLS}" />
+					</p:commandButton>
+					<h:commandButton
+						actionListener="#{controladorReporteTranscripciones.buscar}"
+						value="Buscar" update="growl"  styleClass="searchButton ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" />
+			</p:panelGrid>
+
+			<p:panelGrid columns="1" layout="grid">
+
+				<p:dataTable id="tbl" var="reporte"
+					emptyMessage="#{bundle.MensajeReporteSinResultado}"
+					value="#{controladorReporteTranscripciones.listaReporte}"
+					paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+					paginator="true"
+					rows="#{controladorReporteTranscripciones.filasPaginador}"
+					style="margin-bottom:20px" scrollable="true" scrollWidth="98%"
+					width="98%"
+					currentPageReportTemplate="{currentPage} de {totalPages}"
+					rowsPerPageTemplate="5,10,20">
+
+					<p:column width="72">
+						<f:facet name="header">
+							<h:outputText value="Código del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.codigoCaso}" />
+					</p:column>
+
+					<p:column width="170">
+						<f:facet name="header">
+							<h:outputText value="Nombre del caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.nombreCaso}" />
+					</p:column>
+
+					<p:column width="170">
+						<f:facet name="header">
+							<h:outputText
+								value="Nombre auxiliar administrativo asignado caso" />
+						</f:facet>
+						<h:outputText value="#{reporte.auxiliar}" />
+					</p:column>
+
+					<p:column width="170">
+						<f:facet name="header">
+							<h:outputText value="Nombre del secretario de tribunal" />
+						</f:facet>
+						<h:outputText value="#{reporte.secretario}">
+
+						</h:outputText>
+					</p:column>
+
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText value="Cantidad de minutos a transcribir" />
+						</f:facet>
+						<h:outputText value="#{reporte.minutosATranscribir}" />
+					</p:column>
+					
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText value="Cantidad de minutos pendientes de transcribir" />
+						</f:facet>
+						<h:outputText value="#{reporte.minutosPendientesTranscripcion}" />
+					</p:column>
+
+					<p:column width="80">
+						<f:facet name="header">
+							<h:outputText value="Fecha de grabación" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaGrabacion}">
+							<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+						</h:outputText>
+					</p:column>
+
+					<p:column width="105">
+						<f:facet name="header">
+							<h:outputText value="Fecha de inicio de transcripción" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaInicioTranscripcion}">
+							<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+						</h:outputText>
+					</p:column>
+
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText
+								value="Diferencia en días hábiles entre la fecha de grabación y fecha de inicio de transcripción" />
+						</f:facet>
+						<h:outputText value="#{reporte.difGrabacionIniTranscripcion}" />
+					</p:column>
+
+					<p:column width="105">
+						<f:facet name="header">
+							<h:outputText value="Fecha de entrega de transcripción" />
+						</f:facet>
+						<h:outputText value="#{reporte.fechaEntregaTranscripcion}">
+							<f:convertDateTime type="date" pattern="yyyy/MM/dd" />
+						</h:outputText>
+					</p:column>
+
+					<p:column width="150">
+						<f:facet name="header">
+							<h:outputText
+								value="Diferencia de días hábiles entre la fecha de grabación y la entrega de la transcripción" />
+						</f:facet>
+						<h:outputText value="#{reporte.difGrabacionEntTranscripcion}" />
+					</p:column>
+					
+					<f:facet name="footer">
+							<h:outputText value="Total de registros: " style="float:left" />
+							<h:outputText
+								value="#{controladorReporteTranscripciones.total}"
+								style="float:left">
+							</h:outputText>
+						</f:facet>
+
+				</p:dataTable>
+			</p:panelGrid>
+		</p:panel>
+	</h:form>
+</h:body>
+</html>
