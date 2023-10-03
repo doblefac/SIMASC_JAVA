@@ -60,7 +60,7 @@
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt</artifactId>
-			<version>0.2</version>
+			<version>0.12.0</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-codec</groupId>
@@ -212,7 +212,7 @@
 										</goals>
 									</pluginExecutionFilter>
 									<action>
-										<ignore></ignore>
+										<ignore/>
 									</action>
 								</pluginExecution>
 							</pluginExecutions>
