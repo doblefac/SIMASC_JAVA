@@ -130,7 +130,7 @@
 		 <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20190722</version>
+            <version>20231013</version>
         </dependency>
 
 		<!-- FIN CLIENTES WS INTEGRACIONES SIMASC -->
@@ -212,7 +212,7 @@
 										</goals>
 									</pluginExecutionFilter>
 									<action>
-										<ignore></ignore>
+										<ignore/>
 									</action>
 								</pluginExecution>
 							</pluginExecutions>
